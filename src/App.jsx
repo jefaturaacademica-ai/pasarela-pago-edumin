@@ -4,12 +4,13 @@ import HeaderBanner from './components/HeaderBanner';
 import PackageCard from './components/PackageCard';
 import InstitutionalLogos from './components/InstitutionalLogos';
 import AdminPanelModal from './components/AdminPanelModal';
+import AsesoraLoginModal from './components/AsesoraLoginModal';
 import StudentRegisterModal from './components/StudentRegisterModal';
 import StudentCheckoutModal from './components/StudentCheckoutModal';
 import FloatingWhatsapp from './components/FloatingWhatsapp';
 
 export default function App() {
-  // Official Specialization Packages with Exact Cuotas Rules
+  // Official Specialization Packages
   const packages = [
     {
       id: 'completo',
@@ -74,7 +75,13 @@ export default function App() {
     },
   ];
 
-  // App Modals & State
+  // Asesora Authentication State
+  const [asesoraSession, setAsesoraSession] = useState(() => {
+    return localStorage.getItem('edumin_asesora_session') ? JSON.parse(localStorage.getItem('edumin_asesora_session')) : null;
+  });
+
+  // Modals & App State
+  const [isAsesoraLoginOpen, setIsAsesoraLoginOpen] = useState(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [isStudentRegisterOpen, setIsStudentRegisterOpen] = useState(false);
   const [isStudentCheckoutOpen, setIsStudentCheckoutOpen] = useState(false);
@@ -83,12 +90,12 @@ export default function App() {
   const [studentSelectionData, setStudentSelectionData] = useState(null);
   const [activeStudentCheckoutData, setActiveStudentCheckoutData] = useState(null);
 
-  // Installment plans saved in Administradora Memory DB
+  // Installment plans saved in Memory DB
   const [installmentPlans, setInstallmentPlans] = useState([
     {
       id: 'PAY-891023',
       clientName: 'María Fernanda Ruiz',
-      phone: '984512390',
+      phone: '987423200',
       email: 'maria.ruiz@gmail.com',
       packageName: 'PROGRAMA COMPLETO',
       payType: 'cuotas',
@@ -103,15 +110,19 @@ export default function App() {
     }
   ]);
 
-  // URL Hash auto-detection for admin route and student checkout links
+  // URL Hash routing for admin & student custom links
   useEffect(() => {
     const checkHashOrder = () => {
       const hash = window.location.hash;
       
       // Admin Direct Route: /#admin or /#asesora
       if (hash.includes('admin') || hash.includes('asesora')) {
-        setSelectedPackageForAdmin(packages[0]);
-        setIsAdminPanelOpen(true);
+        if (!asesoraSession) {
+          setIsAsesoraLoginOpen(true);
+        } else {
+          setSelectedPackageForAdmin(packages[0]);
+          setIsAdminPanelOpen(true);
+        }
         return;
       }
 
@@ -137,14 +148,33 @@ export default function App() {
     checkHashOrder();
     window.addEventListener('hashchange', checkHashOrder);
     return () => window.removeEventListener('hashchange', checkHashOrder);
-  }, []);
+  }, [asesoraSession]);
 
   const handleOpenAdminPanel = (pkgData) => {
-    setSelectedPackageForAdmin(pkgData || packages[0]);
+    if (!asesoraSession) {
+      setSelectedPackageForAdmin(pkgData || packages[0]);
+      setIsAsesoraLoginOpen(true);
+    } else {
+      setSelectedPackageForAdmin(pkgData || packages[0]);
+      setIsAdminPanelOpen(true);
+    }
+  };
+
+  const handleAsesoraLoginSuccess = (sessionData) => {
+    setAsesoraSession(sessionData);
+    localStorage.setItem('edumin_asesora_session', JSON.stringify(sessionData));
+    setIsAsesoraLoginOpen(false);
     setIsAdminPanelOpen(true);
   };
 
-  // Student selects Contado or Cuotas on a card
+  const handleAsesoraLogout = () => {
+    setAsesoraSession(null);
+    localStorage.removeItem('edumin_asesora_session');
+    setIsAdminPanelOpen(false);
+    window.location.hash = '';
+  };
+
+  // Student selects Contado on a package card
   const handleStudentSelectPay = (pkg, payType, cuotaOpt) => {
     setStudentSelectionData({ pkg, payType, cuotaOpt });
     setIsStudentRegisterOpen(true);
@@ -153,42 +183,6 @@ export default function App() {
   // Student registers data and proceeds to payment
   const handleStudentProceedToCheckout = (orderData) => {
     setIsStudentRegisterOpen(false);
-
-    // Save installment plan to Admin DB if it was a cuota choice!
-    if (orderData.payType === 'cuotas' && orderData.cuotaOpt) {
-      const today = new Date();
-      const nextMonth = new Date();
-      nextMonth.setDate(today.getDate() + 30);
-
-      const query = new URLSearchParams({
-        id: orderData.id,
-        cliente: orderData.clientName,
-        tel: orderData.phone,
-        email: orderData.email,
-        monto: orderData.amount,
-        pkg: orderData.packageName,
-      }).toString();
-
-      const newPlan = {
-        id: orderData.id,
-        clientName: orderData.clientName,
-        phone: orderData.phone,
-        email: orderData.email,
-        packageName: orderData.basePackageTitle,
-        payType: 'cuotas',
-        currentCuotaNum: 1,
-        totalCuotas: orderData.cuotaOpt.count,
-        cuotaAmount: orderData.amount,
-        totalAmount: orderData.cuotaOpt.total,
-        status: 'Cuota 1 Registrada',
-        createdDate: today.toLocaleDateString('es-PE'),
-        nextDueDate: nextMonth.toLocaleDateString('es-PE'),
-        currentLinkUrl: `${window.location.origin}/#checkout?${query}`,
-      };
-
-      setInstallmentPlans([newPlan, ...installmentPlans]);
-    }
-
     setActiveStudentCheckoutData(orderData);
     setIsStudentCheckoutOpen(true);
   };
@@ -217,10 +211,12 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-['Plus_Jakarta_Sans',sans-serif]">
       
-      {/* Top Navbar with official Logo */}
+      {/* Top Navbar */}
       <Navbar 
         onOpenAdminPanel={() => handleOpenAdminPanel(null)}
         onOpenStudentCheckout={() => handleStudentSelectPay(packages[0], 'contado', null)}
+        isAsesoraLoggedIn={!!asesoraSession}
+        onAsesoraLogout={handleAsesoraLogout}
       />
 
       {/* Main Header Banner */}
@@ -236,7 +232,7 @@ export default function App() {
             Elige tu Programa de Especialización Internacional
           </h2>
           <p className="text-xs sm:text-sm text-slate-600">
-            Selecciona tu modalidad preferida de pago al contado o en cuotas.
+            Pagos al contado con matrícula inmediata en la web. Para financiamiento en cuotas, solicita tu plan a una asesora por WhatsApp al <strong>987423200</strong>.
           </p>
         </div>
 
@@ -259,6 +255,13 @@ export default function App() {
 
       {/* Floating WhatsApp Button */}
       <FloatingWhatsapp />
+
+      {/* Asesora Auth Login Modal */}
+      <AsesoraLoginModal
+        isOpen={isAsesoraLoginOpen}
+        onClose={() => setIsAsesoraLoginOpen(false)}
+        onLoginSuccess={handleAsesoraLoginSuccess}
+      />
 
       {/* Student Data Registration Modal */}
       <StudentRegisterModal

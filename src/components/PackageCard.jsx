@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, X, ArrowRight, ShieldCheck, CreditCard, UserCheck, Calendar } from 'lucide-react';
+import { Check, X, ArrowRight, ShieldCheck, CreditCard, UserCheck, MessageSquare } from 'lucide-react';
 
 export default function PackageCard({ 
   packageData, 
@@ -7,6 +7,12 @@ export default function PackageCard({
   onOpenAdminPanel 
 }) {
   const { id, title, badgeBg, basePrice, originalPrice, cuotaOptions, items, note } = packageData;
+
+  const handleRequestCuotasWhatsApp = (cuotaOpt) => {
+    const message = `Hola asesora EDUMIN 🎓, deseo solicitar mi plan de cuotas para el *${title}* (${cuotaOpt.count} cuotas de S/ ${cuotaOpt.amount}). Mis datos son:`;
+    const waUrl = `https://wa.me/51987423200?text=${encodeURIComponent(message)}`;
+    window.open(waUrl, '_blank');
+  };
 
   return (
     <div className="bg-white rounded-3xl border border-slate-200 shadow-xl flex flex-col justify-between overflow-hidden group hover:border-slate-300 hover:shadow-2xl transition-all duration-300">
@@ -58,36 +64,32 @@ export default function PackageCard({
         )}
       </div>
 
-      {/* Student Options: Contado vs Cuotas */}
+      {/* Student Actions: Pago al Contado (Público) & Cuotas (WhatsApp 987423200) */}
       <div className="p-6 pt-3 bg-white space-y-3 border-t border-slate-100">
         
-        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
-          Opciones de Inclusión para el Alumno:
-        </p>
-
-        {/* 1. Direct Pay Full (Student Contado) */}
+        {/* 1. Direct Pay Full (Public Student Contado) */}
         <button
           onClick={() => onStudentSelectPay(packageData, 'contado', null)}
-          className="w-full py-3 px-4 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs uppercase tracking-wider shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
+          className="w-full py-3.5 px-4 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs uppercase tracking-wider shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
         >
           <CreditCard className="w-4 h-4" />
-          <span>Pago al Contado (S/ {basePrice})</span>
+          <span>Inscribirme al Contado (S/ {basePrice})</span>
         </button>
 
-        {/* 2. Cuotas Options (Student Cuota 1) */}
+        {/* 2. Cuotas vía WhatsApp 987423200 */}
         <div className="space-y-1.5 pt-1">
           {cuotaOptions.map((opt, idx) => (
             <button
               key={idx}
-              onClick={() => onStudentSelectPay(packageData, 'cuotas', opt)}
-              className="w-full py-2.5 px-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-[11px] transition-colors flex items-center justify-between cursor-pointer border border-slate-700 shadow-sm"
+              onClick={() => handleRequestCuotasWhatsApp(opt)}
+              className="w-full py-2.5 px-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition-colors flex items-center justify-between cursor-pointer border border-emerald-500/40 shadow-sm"
             >
               <div className="flex items-center space-x-1.5">
-                <Calendar className="w-3.5 h-3.5 text-amber-400" />
-                <span>En {opt.count} Cuotas: {opt.count} x S/ {opt.amount} (Total S/ {opt.total})</span>
+                <MessageSquare className="w-3.5 h-3.5 fill-white" />
+                <span>Solicitar Cuotas ({opt.count} x S/ {opt.amount})</span>
               </div>
-              <span className="bg-amber-400 text-slate-950 px-2 py-0.5 rounded-lg text-[10px] font-black">
-                Cuota 1: S/ {opt.amount}
+              <span className="bg-[#0f172a] text-amber-400 px-2 py-0.5 rounded-lg text-[10px] font-black border border-slate-700">
+                Pedir por WhatsApp 📱
               </span>
             </button>
           ))}
@@ -99,7 +101,7 @@ export default function PackageCard({
             onClick={() => onOpenAdminPanel(packageData)}
             className="text-[11px] text-slate-500 hover:text-slate-800 font-bold underline cursor-pointer"
           >
-            ⚙️ Panel de Asesora (Personalizar Montos y Links)
+            🔒 Acceso Asesora (Generar Links de Cobro)
           </button>
         </div>
 
