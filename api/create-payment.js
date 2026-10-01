@@ -33,16 +33,25 @@ export default async function handler(req, res) {
     const primaryUrl = `${endpoint}/api-payment/V4/Charge/CreatePayment`;
     const fallbackUrl = `${endpoint}/v1/charge/createPayment`;
 
+    // Parse customer names & details dynamically for Izipay Back Office
+    const fullName = (customer?.fullName || customer?.name || `${customer?.firstName || ''} ${customer?.lastName || ''}`).trim();
+    const nameParts = fullName ? fullName.split(/\s+/) : [];
+    const firstName = customer?.firstName || nameParts[0] || 'Alumno';
+    const lastName = customer?.lastName || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'EDUMIN');
+    const email = customer?.email || 'alumno@edumin.pe';
+    const phone = customer?.phone || '987654321';
+
     const payload = {
       amount: amountInCents,
       currency: currency,
       orderId: orderId || `EDUMIN-${Date.now()}`,
       customer: {
-        email: customer?.email || 'alumno@edumin.pe',
-        reference: customer?.phone || '987654321',
+        email: email,
+        reference: phone,
         billingDetails: {
-          firstName: customer?.firstName || 'Alumno',
-          lastName: customer?.lastName || 'EDUMIN',
+          firstName: firstName,
+          lastName: lastName,
+          phoneNumber: phone,
         }
       }
     };
