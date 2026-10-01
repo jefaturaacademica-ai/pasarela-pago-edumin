@@ -96,11 +96,15 @@ export default function PackageCard({
               onClick={() => handleRequestCuotasWhatsApp(opt)}
               className="w-full py-2.5 px-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition-colors flex items-center justify-between cursor-pointer border border-emerald-500/40 shadow-sm"
             >
-              <div className="flex items-center space-x-1.5">
-                <MessageSquare className="w-3.5 h-3.5 fill-white" />
+              <div className="flex items-center space-x-2">
+                <img 
+                  src="https://img.magnific.com/vector-premium/whatsapp-vector-logo-icono-logotipo-vector-redes-sociales_901408-404.jpg?semt=ais_hybrid&w=740&q=80" 
+                  alt="WhatsApp Logo" 
+                  className="w-4 h-4 rounded-full object-cover shrink-0 shadow-sm"
+                />
                 <span>Solicitar Cuotas ({opt.count} x S/ {opt.amount})</span>
               </div>
-              <span className="bg-[#0f172a] text-amber-400 px-2 py-0.5 rounded-lg text-[10px] font-black border border-slate-700">
+              <span className="bg-[#0f172a] text-amber-400 px-2 py-0.5 rounded-lg text-[10px] font-black border border-slate-700 flex items-center gap-1">
                 WhatsApp 📱
               </span>
             </button>

@@ -74,6 +74,46 @@ export default function IzipayCheckoutModal({
     setOrderNumber('171866' + Math.floor(1000 + Math.random() * 9000));
   };
 
+  // Helper function to send webhook notification to n8n
+  const notifyN8n = async (status, errorMsg = null, paymentData = null) => {
+    try {
+      await fetch('/api/notify-n8n', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status,
+          orderNumber,
+          amount: activeAmount,
+          currency: 'PEN',
+          customer: {
+            name: studentName.trim() || 'Alumno EDUMIN',
+            email: studentEmail.trim() || 'alumno@edumin.pe',
+            phone: studentPhone.trim() || '987654321'
+          },
+          packageName,
+          mode: izipayMode,
+          errorMessage: errorMsg,
+          paymentData
+        })
+      });
+    } catch (err) {
+      console.warn('Error notificando al webhook de n8n:', err);
+    }
+  };
+
+  // Commercial WhatsApp Link pre-filled message
+  const getCommercialWhatsappUrl = () => {
+    const message = `Hola Comercial EDUMIN 🎓, acabo de realizar mi pago con éxito en la pasarela Izipay.\n\n` +
+      `📌 *Número de Pedido:* ${orderNumber}\n` +
+      `👤 *Alumno:* ${studentName || 'Alumno'}\n` +
+      `📧 *Correo:* ${studentEmail || 'Correo'}\n` +
+      `📱 *Teléfono:* ${studentPhone || 'Teléfono'}\n` +
+      `📚 *Programa:* ${packageName}\n` +
+      `💳 *Monto Pagado:* S/ ${activeAmount}.00 PEN\n\n` +
+      `Por favor solicito la confirmación de mi matrícula e ingreso al aula virtual.`;
+    return `https://wa.me/51951101765?text=${encodeURIComponent(message)}`;
+  };
+
   // Reset state and generate fresh orderNumber whenever modal is opened
   useEffect(() => {
     if (isOpen) {
@@ -181,22 +221,41 @@ export default function IzipayCheckoutModal({
             window.KR.onSubmit((paymentData) => {
               console.log('Transacción Izipay Real Exitosa:', paymentData);
               setPaid(true);
+              
+              // Notify n8n Webhook
+              notifyN8n('SUCCESS', null, paymentData);
+
               if (onPaymentSuccess) onPaymentSuccess(orderNumber, { name: studentName, email: studentEmail, phone: studentPhone }, activeAmount);
               confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
+
+              // Auto-open WhatsApp Commercial
+              setTimeout(() => {
+                window.open(getCommercialWhatsappUrl(), '_blank');
+              }, 800);
+
               return false;
             });
 
             window.KR.onError((error) => {
               console.error('Error de pago en Izipay SDK:', error);
-              setErrorMessage(error.errorMessage || 'Transacción rechazada por el banco emisor.');
+              const errTxt = error.errorMessage || 'Transacción rechazada por el banco emisor.';
+              setErrorMessage(errTxt);
+
+              // Notify n8n Webhook on rejection
+              notifyN8n('REJECTED', errTxt, error);
             });
           }
         } else {
-          setErrorMessage(tokenRes.error || 'No se pudo obtener la sesión de pago de Izipay.');
+          const errTxt = tokenRes.error || 'No se pudo obtener la sesión de pago de Izipay.';
+          setErrorMessage(errTxt);
+          notifyN8n('ERROR', errTxt, null);
         }
       } catch (err) {
         console.error('Error en inicialización Izipay:', err);
-        if (isMounted) setErrorMessage('Error conectando con la pasarela Izipay.');
+        if (isMounted) {
+          setErrorMessage('Error conectando con la pasarela Izipay.');
+          notifyN8n('ERROR', err.message || 'Error de conexión', null);
+        }
       } finally {
         if (isMounted) setLoadingToken(false);
       }
@@ -235,7 +294,7 @@ export default function IzipayCheckoutModal({
 
         {paid ? (
           /* SUCCESS VOUCHER */
-          <div className="text-center py-6 space-y-6 animate-fadeIn">
+          <div className="text-center py-6 space-y-5 animate-fadeIn">
             <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 border border-emerald-300 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-10 h-10 stroke-[2.5]" />
             </div>
@@ -245,7 +304,27 @@ export default function IzipayCheckoutModal({
                 Transacción Aprobada por Izipay
               </span>
               <h3 className="text-2xl font-black text-slate-900 pt-2">¡Pago Confirmado!</h3>
-              <p className="text-xs text-slate-600">Tu pago ha sido procesado con éxito y tu vacante ha sido activada.</p>
+              <p className="text-xs text-slate-600">Tu pago ha sido procesado con éxito y tu vacante ha sido reservada.</p>
+            </div>
+
+            {/* DIRECT COMMERCIAL WHATSAPP REDIRECT ACTION BUTTON */}
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-2 text-center">
+              <p className="text-xs font-bold text-emerald-900">
+                👉 Haz clic abajo para confirmar tu matrícula inmediatamente con nuestra asesora comercial:
+              </p>
+              <a
+                href={getCommercialWhatsappUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3.5 px-4 bg-[#25D366] hover:bg-[#20ba59] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2.5 cursor-pointer border border-emerald-400"
+              >
+                <img 
+                  src="https://img.magnific.com/vector-premium/whatsapp-vector-logo-icono-logotipo-vector-redes-sociales_901408-404.jpg?semt=ais_hybrid&w=740&q=80" 
+                  alt="WhatsApp Logo" 
+                  className="w-5 h-5 rounded-full object-cover shrink-0 shadow-sm" 
+                />
+                <span>Confirmar por WhatsApp (+51 951 101 765)</span>
+              </a>
             </div>
 
             {/* Receipt Box */}
@@ -291,7 +370,7 @@ export default function IzipayCheckoutModal({
 
               <button
                 onClick={handleCloseModal}
-                className="flex-1 py-3 px-4 rounded-xl bg-[#00a499] hover:bg-[#00897b] text-white text-xs font-bold uppercase tracking-wider cursor-pointer shadow-md"
+                className="flex-1 py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold uppercase tracking-wider cursor-pointer shadow-md"
               >
                 <span>Finalizar</span>
               </button>
