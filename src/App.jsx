@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import HeaderBanner from './components/HeaderBanner';
 import PackageCard from './components/PackageCard';
-import CoursesGrid from './components/CoursesGrid';
 import InstitutionalLogos from './components/InstitutionalLogos';
 import CartDrawer from './components/CartDrawer';
 import IzipayCheckoutModal from './components/IzipayCheckoutModal';
@@ -90,7 +89,7 @@ export default function App() {
   ]);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  // Izipay Checkout State
+  // Official Izipay Pop-in Checkout State
   const [isIzipayCheckoutOpen, setIsIzipayCheckoutOpen] = useState(false);
   const [izipayCheckoutAmount, setIzipayCheckoutAmount] = useState(540);
   const [izipayCheckoutItems, setIzipayCheckoutItems] = useState([]);
@@ -148,7 +147,7 @@ export default function App() {
     setCartItems(updated);
   };
 
-  // Trigger Direct Izipay Checkout
+  // Trigger Direct Official Izipay Pop-in Checkout
   const handleDirectIzipayCheckout = (item) => {
     const amount = item ? (item.basePrice || item.price || 540) : 540;
     const items = item ? [{ id: item.id, title: item.title, price: amount }] : cartItems;
@@ -276,7 +275,7 @@ export default function App() {
         onOpenAdminPanel={() => handleOpenAdminPanel(null)}
       />
 
-      {/* Main Packages Grid */}
+      {/* Main 3 Specialization Packages Grid */}
       <main className="flex-1 py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-16">
         
         <div className="space-y-10">
@@ -285,7 +284,7 @@ export default function App() {
               Programas de Especialización Internacional
             </h2>
             <p className="text-xs sm:text-sm text-slate-600">
-              Añade programas a tu carrito de compras o realiza el pago directo usando la pasarela de pagos <strong>Izipay</strong>.
+              Añade tu programa al carrito de compras o realiza el pago directo mediante la pasarela de pagos <strong>Izipay Online</strong>.
             </p>
           </div>
 
@@ -300,14 +299,6 @@ export default function App() {
               />
             ))}
           </div>
-        </div>
-
-        {/* Individual Courses Grid */}
-        <div id="cursos">
-          <CoursesGrid 
-            onAddToCart={handleAddToCart}
-            onDirectIzipayCheckout={handleDirectIzipayCheckout}
-          />
         </div>
 
       </main>
@@ -335,7 +326,7 @@ export default function App() {
         onProceedToIzipayCheckout={handleProceedToIzipayFromCart}
       />
 
-      {/* Full Izipay Checkout Modal (Billing Details + Izipay Smart Form) */}
+      {/* Official Izipay Pop-in Checkout Modal (Exact Replica of Izipay Screenshot) */}
       <IzipayCheckoutModal
         isOpen={isIzipayCheckoutOpen}
         onClose={() => setIsIzipayCheckoutOpen(false)}
