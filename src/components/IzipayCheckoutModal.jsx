@@ -25,7 +25,8 @@ export default function IzipayCheckoutModal({
   amount, 
   cartItems,
   onPaymentSuccess,
-  isAdminLoggedIn = false
+  isAdminLoggedIn = false,
+  initialStudentData = null
 }) {
   // Step state: 'info' (Datos del Alumno) -> 'payment' (Formulario Izipay)
   const [step, setStep] = useState('info');
@@ -125,20 +126,26 @@ export default function IzipayCheckoutModal({
       setStep('info');
       setFormValidationError('');
 
-      // Pre-fill student data if saved in localStorage
-      const savedStudent = localStorage.getItem('edumin_last_student_info');
-      if (savedStudent) {
-        try {
-          const parsed = JSON.parse(savedStudent);
-          if (parsed.name) setStudentName(parsed.name);
-          if (parsed.email) setStudentEmail(parsed.email);
-          if (parsed.phone) setStudentPhone(parsed.phone);
-        } catch (e) {
-          console.warn('Error reading saved student info:', e);
+      // Pre-fill student data if provided via props or localStorage
+      if (initialStudentData) {
+        if (initialStudentData.name) setStudentName(initialStudentData.name);
+        if (initialStudentData.email) setStudentEmail(initialStudentData.email);
+        if (initialStudentData.phone) setStudentPhone(initialStudentData.phone);
+      } else {
+        const savedStudent = localStorage.getItem('edumin_last_student_info');
+        if (savedStudent) {
+          try {
+            const parsed = JSON.parse(savedStudent);
+            if (parsed.name) setStudentName(parsed.name);
+            if (parsed.email) setStudentEmail(parsed.email);
+            if (parsed.phone) setStudentPhone(parsed.phone);
+          } catch (e) {
+            console.warn('Error reading saved student info:', e);
+          }
         }
       }
     }
-  }, [isOpen]);
+  }, [isOpen, initialStudentData]);
 
   // Handle Form Step 1 Submission
   const handleProceedToPayment = (e) => {
