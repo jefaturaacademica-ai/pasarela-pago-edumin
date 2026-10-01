@@ -8,9 +8,13 @@ import {
   Lock, 
   Download,
   Smartphone,
-  Check
+  Check,
+  AlertCircle,
+  ShieldCheck,
+  Zap
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { createIzipayPaymentToken } from '../utils/izipayService';
 
 export default function IzipayCheckoutModal({ 
   isOpen, 
@@ -22,6 +26,15 @@ export default function IzipayCheckoutModal({
   const [paymentMethod, setPaymentMethod] = useState('card'); // 'card' | 'qr' | 'yape'
   const [processing, setProcessing] = useState(false);
   const [paid, setPaid] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
+
+  // Test mode vs Production mode toggle (defaults to production for real S/ 1.00 testing)
+  const [izipayMode, setIzipayMode] = useState('production'); // 'production' | 'test'
+  
+  // Custom amount state (allows user to select S/ 1.00 test or full amount)
+  const baseAmount = amount || 540;
+  const [customAmount, setCustomAmount] = useState(null); // null means baseAmount
+  const activeAmount = customAmount !== null ? customAmount : baseAmount;
 
   // Form Fields matching official Izipay modal
   const [cardForm, setCardForm] = useState({
@@ -38,27 +51,54 @@ export default function IzipayCheckoutModal({
 
   if (!isOpen) return null;
 
-  const totalAmount = amount || 540;
   const orderNumber = '171866' + Math.floor(1000 + Math.random() * 9000);
 
-  const handlePayClick = (e) => {
-    e.preventDefault();
+  const handlePayClick = async (e) => {
+    if (e) e.preventDefault();
     setProcessing(true);
+    setErrorMessage(null);
 
-    setTimeout(() => {
-      setProcessing(false);
-      setPaid(true);
-      if (onPaymentSuccess) onPaymentSuccess(orderNumber, cardForm, totalAmount);
-      confetti({
-        particleCount: 120,
-        spread: 80,
-        origin: { y: 0.5 }
+    try {
+      // Send REST request to Izipay API via our serverless bridge
+      const response = await createIzipayPaymentToken({
+        amount: activeAmount,
+        orderId: orderNumber,
+        customer: {
+          firstName: cardForm.firstName,
+          lastName: cardForm.lastName,
+          email: cardForm.email,
+        },
+        mode: izipayMode
       });
-    }, 1600);
+
+      if (!response.success) {
+        setProcessing(false);
+        setErrorMessage(response.error || 'Transacción rechazada por Izipay. Verifique el número de tarjeta, caducidad o fondos.');
+        return;
+      }
+
+      // If backend returns a valid response
+      setTimeout(() => {
+        setProcessing(false);
+        setPaid(true);
+        if (onPaymentSuccess) onPaymentSuccess(orderNumber, cardForm, activeAmount);
+        confetti({
+          particleCount: 120,
+          spread: 80,
+          origin: { y: 0.5 }
+        });
+      }, 1400);
+
+    } catch (err) {
+      console.error('Error procesando pago:', err);
+      setProcessing(false);
+      setErrorMessage('Error de comunicación con la pasarela Izipay. Por favor reintente.');
+    }
   };
 
   const handleCloseModal = () => {
     setPaid(false);
+    setErrorMessage(null);
     onClose();
   };
 
@@ -103,12 +143,16 @@ export default function IzipayCheckoutModal({
                 <span className="text-[#00a499] font-bold font-sans">Izipay Online Perú</span>
               </div>
               <div className="flex justify-between">
+                <span className="text-slate-500">Comercio Afiliado:</span>
+                <span className="text-slate-800 font-bold font-sans">Instituto Técnico Avanza SAC</span>
+              </div>
+              <div className="flex justify-between">
                 <span className="text-slate-500">Correo Confirmación:</span>
                 <span className="text-slate-900">{cardForm.email}</span>
               </div>
               <div className="flex justify-between pt-2 border-t border-slate-200 text-base font-extrabold font-sans">
                 <span className="text-slate-700">Monto Cobrado:</span>
-                <span className="text-[#00a499]">S/ {totalAmount}.00</span>
+                <span className="text-[#00a499]">S/ {activeAmount}.00</span>
               </div>
             </div>
 
@@ -131,18 +175,97 @@ export default function IzipayCheckoutModal({
           </div>
         ) : (
           /* OFFICIAL IZIPAY POP-IN FORM */
-          <div className="space-y-5">
+          <div className="space-y-4">
             
             {/* Header with Shopping Basket & Order Number */}
             <div className="flex items-center justify-between pb-3 border-b border-dashed border-slate-300">
               <div className="flex items-center space-x-2 text-slate-700">
                 <ShoppingBag className="w-7 h-7 text-[#00a499]" />
+                <div>
+                  <span className="text-xs font-bold text-slate-900 block">Izipay Checkout</span>
+                  <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3" /> Conexión Segura SSL
+                  </span>
+                </div>
               </div>
               <div className="text-right">
                 <span className="text-xs font-bold text-slate-900 block">Número de pedido</span>
                 <span className="text-xs font-mono font-medium text-slate-600">{orderNumber}</span>
               </div>
             </div>
+
+            {/* Quick Testing Bar: S/ 1.00 Test Option & Mode Selector */}
+            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-slate-700 flex items-center gap-1">
+                  <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" /> Monto de Cobro:
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setCustomAmount(1)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                      activeAmount === 1
+                        ? 'bg-amber-500 text-white shadow'
+                        : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    ⚡ Pruebas S/ 1.00
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCustomAmount(null)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                      activeAmount !== 1
+                        ? 'bg-[#00a499] text-white shadow'
+                        : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    S/ {baseAmount}.00
+                  </button>
+                </div>
+              </div>
+
+              {/* Mode Selector */}
+              <div className="flex items-center justify-between pt-1 border-t border-slate-200 text-[11px]">
+                <span className="text-slate-500 font-medium">Entorno de Procesamiento:</span>
+                <div className="flex gap-2 font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setIzipayMode('production')}
+                    className={`px-2 py-0.5 rounded cursor-pointer ${
+                      izipayMode === 'production' 
+                        ? 'bg-emerald-600 text-white' 
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    🟢 Producción En Vivo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIzipayMode('test')}
+                    className={`px-2 py-0.5 rounded cursor-pointer ${
+                      izipayMode === 'test' 
+                        ? 'bg-amber-600 text-white' 
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    🟡 Sandbox Test
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Error Alert Banner */}
+            {errorMessage && (
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs flex items-start space-x-2 animate-fadeIn">
+                <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <strong className="font-bold block">Error procesando pago con Izipay:</strong>
+                  <p>{errorMessage}</p>
+                </div>
+              </div>
+            )}
 
             {/* Apple Pay Button */}
             <div>
@@ -155,7 +278,7 @@ export default function IzipayCheckoutModal({
               </button>
 
               {/* Divider */}
-              <div className="flex items-center space-x-3 my-4">
+              <div className="flex items-center space-x-3 my-3">
                 <div className="flex-1 border-t border-slate-300"></div>
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">O puedes pagar usando:</span>
                 <div className="flex-1 border-t border-slate-300"></div>
@@ -169,7 +292,7 @@ export default function IzipayCheckoutModal({
               <button
                 type="button"
                 onClick={() => setPaymentMethod('card')}
-                className={`relative p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                className={`relative p-3 rounded-xl border text-left transition-all cursor-pointer ${
                   paymentMethod === 'card'
                     ? 'border-2 border-[#00a499] bg-white shadow-md'
                     : 'border border-slate-200 bg-slate-50/50 hover:bg-white text-slate-600'
@@ -180,7 +303,7 @@ export default function IzipayCheckoutModal({
                     <Check className="w-3 h-3 stroke-[3]" />
                   </span>
                 )}
-                <CreditCard className={`w-5 h-5 mb-1.5 ${paymentMethod === 'card' ? 'text-[#00a499]' : 'text-slate-500'}`} />
+                <CreditCard className={`w-5 h-5 mb-1 ${paymentMethod === 'card' ? 'text-[#00a499]' : 'text-slate-500'}`} />
                 <span className="text-xs font-extrabold block text-slate-900">Tarjeta</span>
               </button>
 
@@ -188,7 +311,7 @@ export default function IzipayCheckoutModal({
               <button
                 type="button"
                 onClick={() => setPaymentMethod('qr')}
-                className={`relative p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                className={`relative p-3 rounded-xl border text-left transition-all cursor-pointer ${
                   paymentMethod === 'qr'
                     ? 'border-2 border-[#00a499] bg-white shadow-md'
                     : 'border border-slate-200 bg-slate-50/50 hover:bg-white text-slate-600'
@@ -199,7 +322,7 @@ export default function IzipayCheckoutModal({
                     <Check className="w-3 h-3 stroke-[3]" />
                   </span>
                 )}
-                <QrCode className={`w-5 h-5 mb-1.5 ${paymentMethod === 'qr' ? 'text-[#00a499]' : 'text-slate-500'}`} />
+                <QrCode className={`w-5 h-5 mb-1 ${paymentMethod === 'qr' ? 'text-[#00a499]' : 'text-slate-500'}`} />
                 <span className="text-xs font-extrabold block text-slate-900">QR</span>
               </button>
 
@@ -207,7 +330,7 @@ export default function IzipayCheckoutModal({
               <button
                 type="button"
                 onClick={() => setPaymentMethod('yape')}
-                className={`relative p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                className={`relative p-3 rounded-xl border text-left transition-all cursor-pointer ${
                   paymentMethod === 'yape'
                     ? 'border-2 border-[#00a499] bg-white shadow-md'
                     : 'border border-slate-200 bg-slate-50/50 hover:bg-white text-slate-600'
@@ -218,7 +341,7 @@ export default function IzipayCheckoutModal({
                     <Check className="w-3 h-3 stroke-[3]" />
                   </span>
                 )}
-                <div className="w-5 h-5 rounded bg-purple-600 text-white text-[10px] font-black flex items-center justify-center mb-1.5">
+                <div className="w-5 h-5 rounded bg-purple-600 text-white text-[10px] font-black flex items-center justify-center mb-1">
                   yape
                 </div>
                 <span className="text-xs font-extrabold block text-slate-900">Yape</span>
@@ -332,9 +455,9 @@ export default function IzipayCheckoutModal({
                     className="w-full bg-[#00a499] hover:bg-[#00897b] text-white font-extrabold text-base py-3.5 rounded-xl transition-colors shadow-md flex items-center justify-center space-x-2 cursor-pointer"
                   >
                     {processing ? (
-                      <span>Procesando pago...</span>
+                      <span>Procesando pago con Izipay...</span>
                     ) : (
-                      <span>Pagar S/{totalAmount}.00</span>
+                      <span>Pagar S/{activeAmount}.00</span>
                     )}
                   </button>
                 </div>
@@ -356,7 +479,7 @@ export default function IzipayCheckoutModal({
                   onClick={handlePayClick}
                   className="w-full bg-[#00a499] hover:bg-[#00897b] text-white font-extrabold text-base py-3.5 rounded-xl transition-colors shadow-md cursor-pointer mt-2"
                 >
-                  <span>Pagar S/{totalAmount}.00 con QR</span>
+                  <span>Pagar S/{activeAmount}.00 con QR</span>
                 </button>
               </div>
             )}
@@ -389,7 +512,7 @@ export default function IzipayCheckoutModal({
                   onClick={handlePayClick}
                   className="w-full bg-[#00a499] hover:bg-[#00897b] text-white font-extrabold text-base py-3.5 rounded-xl transition-colors shadow-md cursor-pointer mt-2"
                 >
-                  <span>Pagar S/{totalAmount}.00 con Yape</span>
+                  <span>Pagar S/{activeAmount}.00 con Yape</span>
                 </button>
               </div>
             )}
