@@ -1,82 +1,99 @@
-import React from 'react';
-import { School, ShieldCheck, Lock, Mail, Phone, MapPin, Heart, ArrowUp } from 'lucide-react';
+import React, { useState } from 'react';
+import { School, ShieldCheck, Lock, Mail, Phone, MapPin, ArrowUp, FileText, BookOpen } from 'lucide-react';
+import { TermsModal, PrivacyModal, ClaimsBookModal } from './LegalModals';
 
 export default function Footer({ onOpenRegister }) {
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
+  const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
+  const [isClaimsOpen, setIsClaimsOpen] = useState(false);
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const logoUrl = "https://raw.githubusercontent.com/videoconferenciasdiplomado-alt/imagenes/main/logo/logo%20blanco.png";
+
   return (
-    <footer className="bg-slate-950 border-t border-slate-800 text-slate-400 text-xs">
+    <footer className="bg-slate-950 border-t border-slate-800 text-slate-400 text-xs font-['Plus_Jakarta_Sans',sans-serif]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
           
           {/* Brand Col */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-teal-400 p-0.5 shadow-lg">
-                <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center">
-                  <School className="w-5 h-5 text-blue-400" />
-                </div>
-              </div>
-              <div className="flex flex-col">
-                <div className="flex items-center space-x-1.5">
-                  <span className="text-xl font-extrabold text-white">EDUMIN</span>
-                  <span className="text-[10px] uppercase font-bold bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/30">
-                    Pay
-                  </span>
-                </div>
-                <span className="text-[10px] text-slate-500">Pasarela de Pago Educativa</span>
+              <img 
+                src={logoUrl} 
+                alt="EDUMIN Logo" 
+                className="h-8 object-contain" 
+                onError={(e) => e.target.style.display = 'none'}
+              />
+              <div className="border-l border-slate-800 pl-3">
+                <span className="text-[10px] uppercase font-bold text-amber-400 block tracking-widest">Educación Continua</span>
+                <span className="text-sm font-black text-white">EDUMIN Perú</span>
               </div>
             </div>
 
             <p className="text-slate-400 leading-relaxed max-w-sm">
-              La plataforma omnicanal de recaudo diseñada exclusivamente para colegios, institutos y universidades en el Perú. Pagos instantáneos vía Yape, Plin, Tarjetas y comprobantes SUNAT automáticos.
+              Plataforma de capacitación y especialización profesional de EDUMIN. Pagos 100% seguros a través de la pasarela oficial de <strong>Izipay Online</strong>.
             </p>
 
-            <div className="flex items-center space-x-4 pt-2">
-              <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-lg text-[11px] font-semibold text-slate-300 flex items-center space-x-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
-                <span>PCI-DSS Level 1</span>
-              </span>
-              <span className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-lg text-[11px] font-semibold text-slate-300 flex items-center space-x-1.5">
-                <Lock className="w-3.5 h-3.5 text-blue-400" />
-                <span>256-bit SSL</span>
-              </span>
+            {/* Izipay Payment Logos */}
+            <div className="space-y-2 pt-1">
+              <span className="text-[10px] uppercase font-bold text-slate-500 block tracking-wider">Pasarela & Tarjetas Aceptadas:</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-2.5 py-1 bg-red-600 text-white font-extrabold rounded text-[10px] uppercase">Izipay</span>
+                <span className="px-2.5 py-1 bg-blue-700 text-white font-bold rounded text-[10px]">VISA</span>
+                <span className="px-2.5 py-1 bg-red-500 text-white font-bold rounded text-[10px]">Mastercard</span>
+                <span className="px-2.5 py-1 bg-cyan-600 text-white font-bold rounded text-[10px]">AMEX</span>
+                <span className="px-2.5 py-1 bg-purple-600 text-white font-bold rounded text-[10px]">Yape</span>
+                <span className="px-2.5 py-1 bg-teal-600 text-white font-bold rounded text-[10px]">Plin</span>
+              </div>
             </div>
           </div>
 
-          {/* Nav Col 1 */}
+          {/* Legal Policies (Izipay Audit Required) */}
           <div className="space-y-3">
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider">Soluciones</h4>
-            <ul className="space-y-2">
-              <li><a href="#features" className="hover:text-white transition-colors">Cobro de Pensiones</a></li>
-              <li><a href="#features" className="hover:text-white transition-colors">Matrículas en Línea</a></li>
-              <li><a href="#features" className="hover:text-white transition-colors">Recordatorios por WhatsApp</a></li>
-              <li><a href="#features" className="hover:text-white transition-colors">Facturación SUNAT</a></li>
-              <li><a href="#calculator" className="hover:text-white transition-colors">Calculadora de Ahorro</a></li>
+            <h4 className="text-sm font-bold text-white uppercase tracking-wider">Políticas & Legales</h4>
+            <ul className="space-y-2.5">
+              <li>
+                <button onClick={() => setIsTermsOpen(true)} className="hover:text-white transition-colors text-left flex items-center space-x-1.5 cursor-pointer">
+                  <FileText className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Términos y Condiciones</span>
+                </button>
+              </li>
+              <li>
+                <button onClick={() => setIsPrivacyOpen(true)} className="hover:text-white transition-colors text-left flex items-center space-x-1.5 cursor-pointer">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Política de Privacidad (Ley 29733)</span>
+                </button>
+              </li>
+              <li>
+                <button onClick={() => setIsClaimsOpen(true)} className="hover:text-white transition-colors text-left flex items-center space-x-1.5 cursor-pointer">
+                  <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Libro de Reclamaciones Virtual</span>
+                </button>
+              </li>
             </ul>
           </div>
 
-          {/* Nav Col 2 */}
+          {/* Programs */}
           <div className="space-y-3">
-            <h4 className="text-sm font-bold text-white uppercase tracking-wider">Instituciones</h4>
+            <h4 className="text-sm font-bold text-white uppercase tracking-wider">Especializaciones</h4>
             <ul className="space-y-2">
-              <li><a href="#pricing" className="hover:text-white transition-colors">Colegios Privados</a></li>
-              <li><a href="#pricing" className="hover:text-white transition-colors">Institutos Superiores</a></li>
-              <li><a href="#pricing" className="hover:text-white transition-colors">Universidades</a></li>
-              <li><a href="#pricing" className="hover:text-white transition-colors">Redes Multi-Sede</a></li>
-              <li><a href="#dashboard-demo" className="hover:text-white transition-colors">Panel LMS EDUMIN</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Programa Completo</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Programa Full</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Programa Ilimitado</a></li>
+              <li><a href="#" className="hover:text-white transition-colors">Cursos Asincrónicos</a></li>
             </ul>
           </div>
 
           {/* Contact Col */}
           <div className="space-y-3">
             <h4 className="text-sm font-bold text-white uppercase tracking-wider">Contacto & Soporte</h4>
-            <ul className="space-y-2.5">
+            <ul className="space-y-2">
               <li className="flex items-center space-x-2">
                 <Phone className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                <span>+51 (01) 748-9000</span>
+                <span>+51 987423200</span>
               </li>
               <li className="flex items-center space-x-2">
                 <Mail className="w-3.5 h-3.5 text-teal-400 shrink-0" />
@@ -84,37 +101,31 @@ export default function Footer({ onOpenRegister }) {
               </li>
               <li className="flex items-start space-x-2">
                 <MapPin className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
-                <span>Av. Javier Prado Este 4200, Surco, Lima - Perú</span>
+                <span>Av. Javier Prado Este 4200, Surco, Lima</span>
               </li>
             </ul>
-
-            <div className="pt-2">
-              <button
-                onClick={onOpenRegister}
-                className="w-full py-2 px-3 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 rounded-xl font-bold text-xs transition-colors"
-              >
-                Solicitar Demo
-              </button>
-            </div>
           </div>
 
         </div>
 
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500">
-          <p>© 2026 EDUMIN Pay. Todos los derechos reservados. Diseñado para la comunidad educativa.</p>
-          <div className="flex items-center space-x-4">
-            <button 
-              onClick={scrollToTop}
-              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors border border-slate-800 flex items-center space-x-1"
-            >
-              <span>Subir al inicio</span>
-              <ArrowUp className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          <p>© 2026 EDUMIN Pay. Pagos seguros integrados con Izipay. Todos los derechos reservados.</p>
+          <button 
+            onClick={scrollToTop}
+            className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors border border-slate-800 flex items-center space-x-1 cursor-pointer"
+          >
+            <span>Subir al inicio</span>
+            <ArrowUp className="w-3.5 h-3.5" />
+          </button>
         </div>
 
       </div>
+
+      {/* Legal Modals */}
+      <TermsModal isOpen={isTermsOpen} onClose={() => setIsTermsOpen(false)} />
+      <PrivacyModal isOpen={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
+      <ClaimsBookModal isOpen={isClaimsOpen} onClose={() => setIsClaimsOpen(false)} />
     </footer>
   );
 }

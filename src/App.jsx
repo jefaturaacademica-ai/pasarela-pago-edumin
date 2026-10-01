@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import HeaderBanner from './components/HeaderBanner';
 import PackageCard from './components/PackageCard';
+import CoursesGrid from './components/CoursesGrid';
 import InstitutionalLogos from './components/InstitutionalLogos';
+import CartDrawer from './components/CartDrawer';
+import IzipayCheckoutModal from './components/IzipayCheckoutModal';
 import AdminPanelModal from './components/AdminPanelModal';
 import AsesoraLoginModal from './components/AsesoraLoginModal';
 import StudentRegisterModal from './components/StudentRegisterModal';
 import StudentCheckoutModal from './components/StudentCheckoutModal';
 import FloatingWhatsapp from './components/FloatingWhatsapp';
+import Footer from './components/Footer';
 
 export default function App() {
   // Official Specialization Packages
@@ -75,7 +79,23 @@ export default function App() {
     },
   ];
 
-  // Asesora Authentication State
+  // Shopping Cart State
+  const [cartItems, setCartItems] = useState([
+    {
+      id: 'completo',
+      title: 'PROGRAMA COMPLETO',
+      price: 540,
+      quantity: 1,
+    }
+  ]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+
+  // Izipay Checkout State
+  const [isIzipayCheckoutOpen, setIsIzipayCheckoutOpen] = useState(false);
+  const [izipayCheckoutAmount, setIzipayCheckoutAmount] = useState(540);
+  const [izipayCheckoutItems, setIzipayCheckoutItems] = useState([]);
+
+  // Asesora Auth State
   const [asesoraSession, setAsesoraSession] = useState(() => {
     return localStorage.getItem('edumin_asesora_session') ? JSON.parse(localStorage.getItem('edumin_asesora_session')) : null;
   });
@@ -110,12 +130,45 @@ export default function App() {
     }
   ]);
 
-  // URL Hash routing for admin & student custom links
+  // Add Item to Shopping Cart
+  const handleAddToCart = (item) => {
+    const itemPrice = item.price || item.basePrice || 540;
+    const newItem = {
+      id: item.id || 'ITEM-' + Date.now(),
+      title: item.title,
+      price: itemPrice,
+      quantity: 1,
+    };
+    setCartItems([...cartItems, newItem]);
+    setIsCartOpen(true);
+  };
+
+  const handleRemoveFromCart = (index) => {
+    const updated = cartItems.filter((_, idx) => idx !== index);
+    setCartItems(updated);
+  };
+
+  // Trigger Direct Izipay Checkout
+  const handleDirectIzipayCheckout = (item) => {
+    const amount = item ? (item.basePrice || item.price || 540) : 540;
+    const items = item ? [{ id: item.id, title: item.title, price: amount }] : cartItems;
+    setIzipayCheckoutAmount(amount);
+    setIzipayCheckoutItems(items);
+    setIsIzipayCheckoutOpen(true);
+  };
+
+  // Trigger Izipay Checkout from Cart Drawer
+  const handleProceedToIzipayFromCart = (total, items) => {
+    setIzipayCheckoutAmount(total);
+    setIzipayCheckoutItems(items);
+    setIsIzipayCheckoutOpen(true);
+  };
+
+  // Hash Routing
   useEffect(() => {
     const checkHashOrder = () => {
       const hash = window.location.hash;
       
-      // Admin Direct Route: /#admin or /#asesora
       if (hash.includes('admin') || hash.includes('asesora')) {
         if (!asesoraSession) {
           setIsAsesoraLoginOpen(true);
@@ -126,7 +179,6 @@ export default function App() {
         return;
       }
 
-      // Student Custom Checkout Route: /#checkout?id=...
       if (hash.includes('checkout') && hash.includes('?')) {
         const queryStr = hash.split('?')[1];
         const params = new URLSearchParams(queryStr);
@@ -174,13 +226,11 @@ export default function App() {
     window.location.hash = '';
   };
 
-  // Student selects Contado on a package card
   const handleStudentSelectPay = (pkg, payType, cuotaOpt) => {
     setStudentSelectionData({ pkg, payType, cuotaOpt });
     setIsStudentRegisterOpen(true);
   };
 
-  // Student registers data and proceeds to payment
   const handleStudentProceedToCheckout = (orderData) => {
     setIsStudentRegisterOpen(false);
     setActiveStudentCheckoutData(orderData);
@@ -214,9 +264,11 @@ export default function App() {
       {/* Top Navbar */}
       <Navbar 
         onOpenAdminPanel={() => handleOpenAdminPanel(null)}
-        onOpenStudentCheckout={() => handleStudentSelectPay(packages[0], 'contado', null)}
+        onOpenStudentCheckout={() => handleDirectIzipayCheckout(null)}
         isAsesoraLoggedIn={!!asesoraSession}
         onAsesoraLogout={handleAsesoraLogout}
+        cartCount={cartItems.length}
+        onOpenCart={() => setIsCartOpen(true)}
       />
 
       {/* Main Header Banner */}
@@ -225,36 +277,72 @@ export default function App() {
       />
 
       {/* Main Packages Grid */}
-      <main className="flex-1 py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+      <main className="flex-1 py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-16">
         
-        <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-            Elige tu Programa de Especialización Internacional
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-600">
-            Pagos al contado con matrícula inmediata en la web. Para financiamiento en cuotas, solicita tu plan a una asesora por WhatsApp al <strong>987423200</strong>.
-          </p>
+        <div className="space-y-10">
+          <div className="text-center max-w-2xl mx-auto space-y-2">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+              Programas de Especialización Internacional
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600">
+              Añade programas a tu carrito de compras o realiza el pago directo usando la pasarela de pagos <strong>Izipay</strong>.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+            {packages.map((pkg) => (
+              <PackageCard
+                key={pkg.id}
+                packageData={pkg}
+                onAddToCart={handleAddToCart}
+                onDirectIzipayCheckout={handleDirectIzipayCheckout}
+                onOpenAdminPanel={handleOpenAdminPanel}
+              />
+            ))}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-          {packages.map((pkg) => (
-            <PackageCard
-              key={pkg.id}
-              packageData={pkg}
-              onStudentSelectPay={handleStudentSelectPay}
-              onOpenAdminPanel={handleOpenAdminPanel}
-            />
-          ))}
+        {/* Individual Courses Grid */}
+        <div id="cursos">
+          <CoursesGrid 
+            onAddToCart={handleAddToCart}
+            onDirectIzipayCheckout={handleDirectIzipayCheckout}
+          />
         </div>
+
       </main>
 
-      {/* Bottom Institutional Certifications & Financing Banners */}
+      {/* Bottom Institutional Certifications */}
       <InstitutionalLogos 
         onOpenGenerator={() => handleOpenAdminPanel(null)}
       />
 
+      {/* Footer with Legal Modals & Izipay Badges */}
+      <Footer 
+        onOpenRegister={() => handleOpenAdminPanel(null)}
+      />
+
       {/* Floating WhatsApp Button */}
       <FloatingWhatsapp />
+
+      {/* Shopping Cart Drawer */}
+      <CartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        cartItems={cartItems}
+        onRemoveItem={handleRemoveFromCart}
+        onClearCart={() => setCartItems([])}
+        onProceedToIzipayCheckout={handleProceedToIzipayFromCart}
+      />
+
+      {/* Full Izipay Checkout Modal (Billing Details + Izipay Smart Form) */}
+      <IzipayCheckoutModal
+        isOpen={isIzipayCheckoutOpen}
+        onClose={() => setIsIzipayCheckoutOpen(false)}
+        amount={izipayCheckoutAmount}
+        cartItems={izipayCheckoutItems}
+        onPaymentSuccess={() => setCartItems([])}
+      />
 
       {/* Asesora Auth Login Modal */}
       <AsesoraLoginModal
@@ -282,7 +370,7 @@ export default function App() {
         onPreviewStudentCheckout={handlePreviewStudentCheckout}
       />
 
-      {/* Student Payment Modal */}
+      {/* Custom Link Student Payment Modal */}
       <StudentCheckoutModal
         isOpen={isStudentCheckoutOpen}
         onClose={() => setIsStudentCheckoutOpen(false)}

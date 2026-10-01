@@ -1,9 +1,10 @@
 import React from 'react';
-import { Check, X, ArrowRight, ShieldCheck, CreditCard, UserCheck, MessageSquare } from 'lucide-react';
+import { Check, X, ArrowRight, ShieldCheck, CreditCard, ShoppingCart, MessageSquare, Zap } from 'lucide-react';
 
 export default function PackageCard({ 
   packageData, 
-  onStudentSelectPay,
+  onAddToCart,
+  onDirectIzipayCheckout,
   onOpenAdminPanel 
 }) {
   const { id, title, badgeBg, basePrice, originalPrice, cuotaOptions, items, note } = packageData;
@@ -15,7 +16,7 @@ export default function PackageCard({
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200 shadow-xl flex flex-col justify-between overflow-hidden group hover:border-slate-300 hover:shadow-2xl transition-all duration-300">
+    <div className="bg-white rounded-3xl border border-slate-200 shadow-xl flex flex-col justify-between overflow-hidden group hover:border-slate-300 hover:shadow-2xl transition-all duration-300 font-['Plus_Jakarta_Sans',sans-serif]">
       
       {/* Top Header Badge */}
       <div className="p-6 text-center border-b border-slate-100 bg-slate-900 text-white relative">
@@ -64,19 +65,30 @@ export default function PackageCard({
         )}
       </div>
 
-      {/* Student Actions: Pago al Contado (Público) & Cuotas (WhatsApp 987423200) */}
-      <div className="p-6 pt-3 bg-white space-y-3 border-t border-slate-100">
+      {/* Actions: Add to Cart & Direct Izipay Checkout */}
+      <div className="p-6 pt-3 bg-white space-y-2 border-t border-slate-100">
         
-        {/* 1. Direct Pay Full (Public Student Contado) */}
-        <button
-          onClick={() => onStudentSelectPay(packageData, 'contado', null)}
-          className="w-full py-3.5 px-4 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs uppercase tracking-wider shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
-        >
-          <CreditCard className="w-4 h-4" />
-          <span>Inscribirme al Contado (S/ {basePrice})</span>
-        </button>
+        <div className="grid grid-cols-2 gap-2">
+          {/* Add to Cart */}
+          <button
+            onClick={() => onAddToCart(packageData)}
+            className="py-3 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-extrabold text-[11px] uppercase tracking-wider border border-slate-300 transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+          >
+            <ShoppingCart className="w-3.5 h-3.5 text-slate-700" />
+            <span>+ Carrito</span>
+          </button>
 
-        {/* 2. Cuotas vía WhatsApp 987423200 */}
+          {/* Direct Izipay Pay */}
+          <button
+            onClick={() => onDirectIzipayCheckout(packageData)}
+            className="py-3 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-[11px] uppercase tracking-wider shadow-md transition-all flex items-center justify-center space-x-1 cursor-pointer"
+          >
+            <Zap className="w-3.5 h-3.5 fill-slate-950" />
+            <span>Pagar Izipay</span>
+          </button>
+        </div>
+
+        {/* Cuotas via WhatsApp */}
         <div className="space-y-1.5 pt-1">
           {cuotaOptions.map((opt, idx) => (
             <button
@@ -89,13 +101,13 @@ export default function PackageCard({
                 <span>Solicitar Cuotas ({opt.count} x S/ {opt.amount})</span>
               </div>
               <span className="bg-[#0f172a] text-amber-400 px-2 py-0.5 rounded-lg text-[10px] font-black border border-slate-700">
-                Pedir por WhatsApp 📱
+                WhatsApp 📱
               </span>
             </button>
           ))}
         </div>
 
-        {/* Admin Link shortcut */}
+        {/* Admin Link */}
         <div className="pt-1 text-center">
           <button
             onClick={() => onOpenAdminPanel(packageData)}
