@@ -3,12 +3,8 @@ import {
   X, 
   ShoppingBag, 
   CreditCard, 
-  QrCode, 
   CheckCircle2, 
-  Lock, 
   Download,
-  Smartphone,
-  Check,
   AlertCircle,
   ShieldCheck,
   Zap,
@@ -25,8 +21,6 @@ export default function IzipayCheckoutModal({
   onPaymentSuccess,
   isAdminLoggedIn = false
 }) {
-  const [paymentMethod, setPaymentMethod] = useState('card'); // 'card' | 'qr' | 'yape'
-  const [processing, setProcessing] = useState(false);
   const [loadingToken, setLoadingToken] = useState(false);
   const [paid, setPaid] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -42,9 +36,6 @@ export default function IzipayCheckoutModal({
   const baseAmount = amount || 540;
   const [customAmount, setCustomAmount] = useState(null);
   const activeAmount = (isAdminLoggedIn && customAmount !== null) ? customAmount : baseAmount;
-
-  const [yapePhone, setYapePhone] = useState('987423200');
-  const [yapeCode, setYapeCode] = useState('849201');
 
   // Fresh order number generated on every modal open or amount/mode change
   const [orderNumber, setOrderNumber] = useState('');
@@ -162,17 +153,6 @@ export default function IzipayCheckoutModal({
     setPaid(false);
     setErrorMessage(null);
     onClose();
-  };
-
-  const handleYapeOrQrSubmit = (e) => {
-    e.preventDefault();
-    setProcessing(true);
-    setTimeout(() => {
-      setProcessing(false);
-      setPaid(true);
-      if (onPaymentSuccess) onPaymentSuccess(orderNumber, {}, activeAmount);
-      confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
-    }, 1500);
   };
 
   return (
@@ -338,60 +318,24 @@ export default function IzipayCheckoutModal({
               </div>
             )}
 
-            {/* Payment Method Tabs (Tarjeta | QR | Yape) */}
-            <div className="grid grid-cols-3 gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('card')}
-                className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
-                  paymentMethod === 'card' ? 'border-2 border-[#00a499] bg-white font-extrabold text-[#00a499]' : 'border border-slate-200 bg-slate-50 text-slate-600'
-                }`}
-              >
-                <CreditCard className="w-4 h-4 mx-auto mb-1" />
-                <span className="text-xs">Tarjeta</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('qr')}
-                className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
-                  paymentMethod === 'qr' ? 'border-2 border-[#00a499] bg-white font-extrabold text-[#00a499]' : 'border border-slate-200 bg-slate-50 text-slate-600'
-                }`}
-              >
-                <QrCode className="w-4 h-4 mx-auto mb-1 text-[#00a499]" />
-                <span className="text-xs">Pago QR</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('yape')}
-                className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
-                  paymentMethod === 'yape' ? 'border-2 border-[#00a499] bg-white font-extrabold text-[#00a499]' : 'border border-slate-200 bg-slate-50 text-slate-600'
-                }`}
-              >
-                <Smartphone className="w-4 h-4 mx-auto mb-1 text-purple-600" />
-                <span className="text-xs">Yape</span>
-              </button>
-            </div>
-
             {/* Loading Spinner during Token Generation */}
-            {loadingToken && paymentMethod === 'card' ? (
+            {loadingToken ? (
               <div className="text-center py-8 space-y-3">
                 <RefreshCw className="w-8 h-8 text-[#00a499] animate-spin mx-auto" />
                 <p className="text-xs font-bold text-slate-600">Generando sesión de pago segura con Izipay...</p>
                 <p className="text-[11px] text-slate-400">Comercio: Instituto Técnico Avanza SAC (74025911)</p>
               </div>
             ) : (
-              /* REAL EMBEDDED IZIPAY SMART FORM CONTAINER & SMART UI */
+              /* REAL EMBEDDED IZIPAY SMART FORM CONTAINER */
               <div className="space-y-4">
                 
                 {/* Official Izipay Krypton Embedded Smart Form */}
-                {paymentMethod === 'card' && formToken && (
+                {formToken && (
                   <div className="p-3 border border-slate-200 bg-slate-50 rounded-xl space-y-2">
                     <div className="flex items-center justify-between text-xs font-bold text-slate-800 border-b border-slate-200 pb-2">
                       <span className="flex items-center gap-1.5">
                         <CreditCard className="w-4 h-4 text-[#00a499]" />
-                        Formulario de Cobro Bancario Directo
+                        Formulario de Cobro Bancario Directo (Tarjetas Visa/Mastercard/Amex/Diners)
                       </span>
                       <span className="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-mono">
                         formToken Activo
@@ -419,58 +363,6 @@ export default function IzipayCheckoutModal({
                       <div className="kr-form-error text-xs text-rose-600 font-bold mt-2"></div>
                     </div>
                   </div>
-                )}
-
-                {/* QR Details & Direct Process */}
-                {paymentMethod === 'qr' && (
-                  <form onSubmit={handleYapeOrQrSubmit} className="text-center py-4 bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3 text-xs">
-                    <div className="w-32 h-32 bg-white p-2 border border-slate-300 rounded-lg mx-auto flex items-center justify-center shadow-sm">
-                      <QrCode className="w-full h-full text-slate-800" />
-                    </div>
-                    <p className="font-bold text-slate-800">Escanea el código QR oficial Izipay desde tu app bancaria</p>
-                    <p className="text-[11px] text-slate-500">BCP, Interbank, BBVA, Scotiabank</p>
-                    <button
-                      type="submit"
-                      disabled={processing}
-                      className="w-full bg-[#00a499] hover:bg-[#00897b] text-white font-extrabold text-sm py-3 rounded-xl transition-colors shadow-md cursor-pointer"
-                    >
-                      {processing ? 'Confirmando Pago QR...' : `Pagar S/ ${activeAmount}.00 con QR`}
-                    </button>
-                  </form>
-                )}
-
-                {/* YAPE Details & Direct Process */}
-                {paymentMethod === 'yape' && (
-                  <form onSubmit={handleYapeOrQrSubmit} className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
-                    <div className="space-y-1">
-                      <label className="font-bold text-slate-700">Número Celular Yape:</label>
-                      <input 
-                        type="tel" 
-                        required
-                        value={yapePhone} 
-                        onChange={(e) => setYapePhone(e.target.value)} 
-                        className="w-full bg-white border border-slate-300 font-mono text-xs px-3.5 py-2.5 rounded-lg" 
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="font-bold text-slate-700">Código de Aprobación Yape (6 dígitos):</label>
-                      <input 
-                        type="text" 
-                        required
-                        placeholder="Ej. 849201"
-                        value={yapeCode} 
-                        onChange={(e) => setYapeCode(e.target.value)} 
-                        className="w-full bg-white border border-slate-300 font-mono text-xs px-3.5 py-2.5 rounded-lg" 
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={processing}
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white font-extrabold text-sm py-3 rounded-xl transition-colors shadow-md cursor-pointer pt-2"
-                    >
-                      {processing ? 'Procesando con Yape...' : `Pagar S/ ${activeAmount}.00 con Yape`}
-                    </button>
-                  </form>
                 )}
 
               </div>
