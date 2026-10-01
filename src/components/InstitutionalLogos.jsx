@@ -1,33 +1,62 @@
 import React from 'react';
-import { ShieldCheck, Award, CreditCard, School } from 'lucide-react';
 
 export default function InstitutionalLogos({ onOpenGenerator }) {
+  const handleCuotasBannerWhatsApp = () => {
+    const message = `Hola EDUMIN 🎓, solicito información sobre el financiamiento en cuotas (2, 3 o 4 cuotas) para los programas de especialización.`;
+    window.open(`https://wa.me/51951101765?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  const handleApoyoEstudiantilWhatsApp = () => {
+    const message = `Hola EDUMIN 🎓, soy estudiante universitario y solicito información sobre el Programa de Apoyo Estudiantil con descuentos acumulables a RECCIP.`;
+    window.open(`https://wa.me/51951101765?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
   return (
-    <section className="py-12 bg-[#05143c] border-t border-blue-900/60 text-white">
+    <section className="py-12 bg-[#05143c] border-t border-blue-900/60 text-white font-['Plus_Jakarta_Sans',sans-serif]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         
-        {/* Financing & Student Support Banners from Image */}
+        {/* Financing & Student Support Banners -> Direct WhatsApp Links */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           
           {/* Banner 1: Cuotas */}
-          <div className="bg-yellow-400 p-5 rounded-2xl text-slate-950 text-center space-y-1 shadow-lg border border-yellow-300 transform hover:scale-[1.01] transition-transform">
-            <h4 className="text-base sm:text-lg font-black uppercase tracking-tight">
-              SI NO DESEAS PAGAR AL CONTADO ACCEDE A NUESTRO FINANCIAMIENTO EN CUOTAS
-            </h4>
-            <p className="text-xs font-extrabold text-slate-800">
-              Consulta las modalidades de pago fraccionado en 2, 3 o 4 cuotas.
+          <button
+            onClick={handleCuotasBannerWhatsApp}
+            className="w-full bg-amber-400 hover:bg-amber-300 p-5 rounded-2xl text-slate-950 text-center space-y-1 shadow-lg border border-amber-300 transform hover:scale-[1.02] transition-all cursor-pointer flex flex-col items-center justify-center group"
+          >
+            <div className="flex items-center space-x-2">
+              <img 
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTM_c9Q3XvG6b7rWAQZV7nxNNN8R0kXGoD6TjFThjsLvtKKC89Ej7KjTgW3&s=10" 
+                alt="WhatsApp Logo" 
+                className="w-5 h-5 rounded-full object-cover shrink-0 shadow-sm" 
+              />
+              <h4 className="text-base sm:text-lg font-black uppercase tracking-tight">
+                SI NO DESEAS PAGAR AL CONTADO ACCEDE A NUESTRO FINANCIAMIENTO EN CUOTAS
+              </h4>
+            </div>
+            <p className="text-xs font-extrabold text-slate-900 group-hover:underline">
+              Consulta las modalidades de pago fraccionado en 2, 3 o 4 cuotas. (Clic para enviar WhatsApp 📱)
             </p>
-          </div>
+          </button>
 
           {/* Banner 2: Apoyo Estudiantil */}
-          <div className="bg-[#071b4e] p-5 rounded-2xl text-white text-center border-2 border-blue-500/50 space-y-1 shadow-lg flex flex-col justify-center">
-            <h4 className="text-sm sm:text-base font-black text-blue-200">
-              Si eres estudiante universitario, accede a nuestro programa de apoyo estudiantil!!
-            </h4>
-            <p className="text-xs text-yellow-400 font-bold">
-              Descuentos adicionales acumulables con la subvención RECCIP.
+          <button
+            onClick={handleApoyoEstudiantilWhatsApp}
+            className="w-full bg-[#071b4e] hover:bg-[#0a256b] p-5 rounded-2xl text-white text-center border-2 border-blue-500/50 space-y-1 shadow-lg transform hover:scale-[1.02] transition-all cursor-pointer flex flex-col items-center justify-center group"
+          >
+            <div className="flex items-center space-x-2">
+              <img 
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTM_c9Q3XvG6b7rWAQZV7nxNNN8R0kXGoD6TjFThjsLvtKKC89Ej7KjTgW3&s=10" 
+                alt="WhatsApp Logo" 
+                className="w-5 h-5 rounded-full object-cover shrink-0 shadow-sm" 
+              />
+              <h4 className="text-sm sm:text-base font-black text-blue-200">
+                Si eres estudiante universitario, accede a nuestro programa de apoyo estudiantil!!
+              </h4>
+            </div>
+            <p className="text-xs text-amber-300 font-bold group-hover:underline">
+              Descuentos adicionales acumulables con la subvención RECCIP. (Clic para consultar por WhatsApp 📱)
             </p>
-          </div>
+          </button>
 
         </div>
 

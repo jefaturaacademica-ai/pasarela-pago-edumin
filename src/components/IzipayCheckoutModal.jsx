@@ -319,7 +319,7 @@ export default function IzipayCheckoutModal({
                 className="w-full py-3.5 px-4 bg-[#25D366] hover:bg-[#20ba59] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2.5 cursor-pointer border border-emerald-400"
               >
                 <img 
-                  src="https://img.magnific.com/vector-premium/whatsapp-vector-logo-icono-logotipo-vector-redes-sociales_901408-404.jpg?semt=ais_hybrid&w=740&q=80" 
+                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTM_c9Q3XvG6b7rWAQZV7nxNNN8R0kXGoD6TjFThjsLvtKKC89Ej7KjTgW3&s=10" 
                   alt="WhatsApp Logo" 
                   className="w-5 h-5 rounded-full object-cover shrink-0 shadow-sm" 
                 />

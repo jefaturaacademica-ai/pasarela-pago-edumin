@@ -98,7 +98,7 @@ export default function PackageCard({
             >
               <div className="flex items-center space-x-2">
                 <img 
-                  src="https://img.magnific.com/vector-premium/whatsapp-vector-logo-icono-logotipo-vector-redes-sociales_901408-404.jpg?semt=ais_hybrid&w=740&q=80" 
+                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTM_c9Q3XvG6b7rWAQZV7nxNNN8R0kXGoD6TjFThjsLvtKKC89Ej7KjTgW3&s=10" 
                   alt="WhatsApp Logo" 
                   className="w-4 h-4 rounded-full object-cover shrink-0 shadow-sm"
                 />

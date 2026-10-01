@@ -79,14 +79,7 @@ export default function App() {
   ];
 
   // Shopping Cart State
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 'completo',
-      title: 'PROGRAMA COMPLETO',
-      price: 540,
-      quantity: 1,
-    }
-  ]);
+  const [cartItems, setCartItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   // Official Izipay Pop-in Checkout State
