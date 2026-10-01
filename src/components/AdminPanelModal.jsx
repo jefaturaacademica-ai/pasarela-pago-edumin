@@ -33,7 +33,7 @@ export default function AdminPanelModal({
   onUpdateInstallmentStatus,
   onPreviewStudentCheckout
 }) {
-  const [activeTab, setActiveTab] = useState('new'); // 'new' | 'custom_link' | 'installments' | 'history'
+  const [activeTab, setActiveTab] = useState('custom_link'); // 'custom_link' | 'new' | 'installments' | 'history'
   
   // Package Link Form State
   const [formData, setFormData] = useState({

@@ -123,26 +123,40 @@ export default function IzipayCheckoutModal({
       setErrorMessage(null);
       setFormToken(null);
       setCustomAmount(null);
-      setStep('info');
       setFormValidationError('');
+
+      let nameToSet = '';
+      let emailToSet = '';
+      let phoneToSet = '';
 
       // Pre-fill student data if provided via props or localStorage
       if (initialStudentData) {
-        if (initialStudentData.name) setStudentName(initialStudentData.name);
-        if (initialStudentData.email) setStudentEmail(initialStudentData.email);
-        if (initialStudentData.phone) setStudentPhone(initialStudentData.phone);
+        if (initialStudentData.name) nameToSet = initialStudentData.name;
+        if (initialStudentData.email) emailToSet = initialStudentData.email;
+        if (initialStudentData.phone) phoneToSet = initialStudentData.phone;
       } else {
         const savedStudent = localStorage.getItem('edumin_last_student_info');
         if (savedStudent) {
           try {
             const parsed = JSON.parse(savedStudent);
-            if (parsed.name) setStudentName(parsed.name);
-            if (parsed.email) setStudentEmail(parsed.email);
-            if (parsed.phone) setStudentPhone(parsed.phone);
+            if (parsed.name) nameToSet = parsed.name;
+            if (parsed.email) nameToSet = parsed.email;
+            if (parsed.phone) phoneToSet = parsed.phone;
           } catch (e) {
             console.warn('Error reading saved student info:', e);
           }
         }
+      }
+
+      setStudentName(nameToSet);
+      setStudentEmail(emailToSet);
+      setStudentPhone(phoneToSet);
+
+      // If student info was prefilled by Admin, SKIP Step 1 and GO DIRECTLY to Izipay payment form!
+      if (nameToSet.trim() && emailToSet.trim() && phoneToSet.trim()) {
+        setStep('payment');
+      } else {
+        setStep('info');
       }
     }
   }, [isOpen, initialStudentData]);
