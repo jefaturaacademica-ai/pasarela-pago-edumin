@@ -22,7 +22,8 @@ export default function IzipayCheckoutModal({
   onClose, 
   amount, 
   cartItems,
-  onPaymentSuccess 
+  onPaymentSuccess,
+  isAdminLoggedIn = false
 }) {
   const [paymentMethod, setPaymentMethod] = useState('card'); // 'card' | 'qr' | 'yape'
   const [processing, setProcessing] = useState(false);
@@ -34,30 +35,51 @@ export default function IzipayCheckoutModal({
   const [formToken, setFormToken] = useState(null);
   const [activePublicKey, setActivePublicKey] = useState(IZIPAY_CONFIG.prodPublicKey);
 
-  // Mode: 'production' for REAL BANK CHARGES or 'test'
+  // Mode: 'production' by default for real bank charges
   const [izipayMode, setIzipayMode] = useState('production');
   
-  // Custom amount state (allows user to select S/ 1.00 test or full amount)
+  // Custom amount state (allows admin to select S/ 1.00 test or full amount)
   const baseAmount = amount || 540;
-  const [customAmount, setCustomAmount] = useState(null); // null means baseAmount
-  const activeAmount = customAmount !== null ? customAmount : baseAmount;
+  const [customAmount, setCustomAmount] = useState(null);
+  const activeAmount = (isAdminLoggedIn && customAmount !== null) ? customAmount : baseAmount;
 
   const [yapePhone, setYapePhone] = useState('987654321');
   const [yapeCode, setYapeCode] = useState('849201');
 
+  // Fresh order number generated on every modal open
+  const [orderNumber, setOrderNumber] = useState('');
+
   // Ref for kr-embedded container
   const krContainerRef = useRef(null);
 
-  const orderNumber = useRef('171866' + Math.floor(1000 + Math.random() * 9000)).current;
-
-  // Initialize Izipay formToken and KR SDK whenever mode, amount, or modal visibility changes
+  // Reset state and generate fresh orderNumber whenever modal is opened
   useEffect(() => {
-    if (!isOpen) return;
+    if (isOpen) {
+      setOrderNumber('171866' + Math.floor(1000 + Math.random() * 9000));
+      setPaid(false);
+      setErrorMessage(null);
+      setFormToken(null);
+      setCustomAmount(null);
+    }
+  }, [isOpen]);
+
+  // Initialize Izipay formToken and KR SDK whenever mode, amount, or orderNumber changes
+  useEffect(() => {
+    if (!isOpen || !orderNumber) return;
 
     let isMounted = true;
     setLoadingToken(true);
     setErrorMessage(null);
     setFormToken(null);
+
+    // Clean previous forms from Krypton SDK if present
+    if (window.KR && typeof window.KR.removeForms === 'function') {
+      try {
+        window.KR.removeForms();
+      } catch (e) {
+        console.warn('Clean forms warning:', e);
+      }
+    }
 
     const initIzipay = async () => {
       try {
@@ -81,7 +103,7 @@ export default function IzipayCheckoutModal({
           const pKey = tokenRes.publicKey || (izipayMode === 'production' ? IZIPAY_CONFIG.prodPublicKey : IZIPAY_CONFIG.testPublicKey);
           setActivePublicKey(pKey);
 
-          // 2. Load Krypton SDK script dynamically
+          // 2. Load Krypton SDK script dynamically with matching public key
           await loadIzipayScript(pKey);
 
           if (window.KR && typeof window.KR.setFormConfig === 'function') {
@@ -121,7 +143,7 @@ export default function IzipayCheckoutModal({
     return () => {
       isMounted = false;
     };
-  }, [isOpen, izipayMode, activeAmount]);
+  }, [isOpen, orderNumber, izipayMode, activeAmount]);
 
   if (!isOpen) return null;
 
@@ -173,7 +195,7 @@ export default function IzipayCheckoutModal({
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Comercio Afiliado:</span>
-                <span className="text-slate-800 font-bold font-sans">Instituto Técnico Avanza SAC (74025911)</span>
+                <span className="text-slate-800 font-bold font-sans">Instituto Técnico Avanza SAC</span>
               </div>
               <div className="flex justify-between pt-2 border-t border-slate-200 text-base font-extrabold font-sans">
                 <span className="text-slate-700">Monto Cobrado Real:</span>
@@ -219,67 +241,69 @@ export default function IzipayCheckoutModal({
               </div>
             </div>
 
-            {/* Quick Testing Bar: S/ 1.00 Test Option & Mode Selector */}
-            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-slate-700 flex items-center gap-1">
-                  <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" /> Monto a Cobrar:
-                </span>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setCustomAmount(1)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                      activeAmount === 1
-                        ? 'bg-amber-500 text-white shadow'
-                        : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    ⚡ Prueba Real S/ 1.00
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCustomAmount(null)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-                      activeAmount !== 1
-                        ? 'bg-[#00a499] text-white shadow'
-                        : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    S/ {baseAmount}.00
-                  </button>
+            {/* Quick Testing Bar: ONLY VISIBLE TO LOGGED IN ADMIN / ASESORA */}
+            {isAdminLoggedIn && (
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-700 flex items-center gap-1">
+                    <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" /> Monto a Cobrar:
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setCustomAmount(1)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                        activeAmount === 1
+                          ? 'bg-amber-500 text-white shadow'
+                          : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      ⚡ Prueba Real S/ 1.00
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCustomAmount(null)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
+                        activeAmount !== 1
+                          ? 'bg-[#00a499] text-white shadow'
+                          : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      S/ {baseAmount}.00
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              {/* Mode Selector */}
-              <div className="flex items-center justify-between pt-1 border-t border-slate-200 text-[11px]">
-                <span className="text-slate-500 font-medium">Entorno de Procesamiento:</span>
-                <div className="flex gap-2 font-bold">
-                  <button
-                    type="button"
-                    onClick={() => setIzipayMode('production')}
-                    className={`px-2.5 py-1 rounded-md text-xs cursor-pointer flex items-center gap-1 ${
-                      izipayMode === 'production' 
-                        ? 'bg-emerald-600 text-white shadow-sm' 
-                        : 'bg-white border border-slate-300 text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    🟢 Producción En Vivo
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIzipayMode('test')}
-                    className={`px-2.5 py-1 rounded-md text-xs cursor-pointer flex items-center gap-1 ${
-                      izipayMode === 'test' 
-                        ? 'bg-amber-600 text-white shadow-sm' 
-                        : 'bg-white border border-slate-300 text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    🟡 Sandbox Test
-                  </button>
+                {/* Mode Selector */}
+                <div className="flex items-center justify-between pt-1 border-t border-slate-200 text-[11px]">
+                  <span className="text-slate-500 font-medium">Entorno de Procesamiento:</span>
+                  <div className="flex gap-2 font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setIzipayMode('production')}
+                      className={`px-2.5 py-1 rounded-md text-xs cursor-pointer flex items-center gap-1 ${
+                        izipayMode === 'production' 
+                          ? 'bg-emerald-600 text-white shadow-sm' 
+                          : 'bg-white border border-slate-300 text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      🟢 Producción En Vivo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIzipayMode('test')}
+                      className={`px-2.5 py-1 rounded-md text-xs cursor-pointer flex items-center gap-1 ${
+                        izipayMode === 'test' 
+                          ? 'bg-amber-600 text-white shadow-sm' 
+                          : 'bg-white border border-slate-300 text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      🟡 Sandbox Test
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Error Alert Banner */}
             {errorMessage && (
@@ -318,6 +342,7 @@ export default function IzipayCheckoutModal({
 
                     {/* OFFICIAL IZIPAY KR-EMBEDDED CONTAINER */}
                     <div 
+                      key={`${orderNumber}-${activeAmount}`}
                       ref={krContainerRef}
                       className="kr-embedded py-2" 
                       kr-form-token={formToken}

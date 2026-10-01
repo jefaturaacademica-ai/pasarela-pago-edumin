@@ -333,6 +333,7 @@ export default function App() {
         amount={izipayCheckoutAmount}
         cartItems={izipayCheckoutItems}
         onPaymentSuccess={() => setCartItems([])}
+        isAdminLoggedIn={!!asesoraSession}
       />
 
       {/* Asesora Auth Login Modal */}

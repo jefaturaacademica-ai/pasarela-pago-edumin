@@ -107,16 +107,6 @@ export default function PackageCard({
           ))}
         </div>
 
-        {/* Admin Link */}
-        <div className="pt-1 text-center">
-          <button
-            onClick={() => onOpenAdminPanel(packageData)}
-            className="text-[11px] text-slate-500 hover:text-slate-800 font-bold underline cursor-pointer"
-          >
-            🔒 Acceso Asesora (Generar Links de Cobro)
-          </button>
-        </div>
-
       </div>
 
     </div>

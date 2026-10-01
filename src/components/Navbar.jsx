@@ -40,7 +40,7 @@ export default function Navbar({
             <a href="#certificacion" className="hover:text-white transition-colors">Certificación</a>
           </div>
 
-          {/* Actions: Shopping Cart, Asesora Access & Checkout */}
+          {/* Actions: Shopping Cart & Asesora Session */}
           <div className="flex items-center space-x-2 sm:space-x-3">
             
             {/* Shopping Cart Drawer Trigger */}
@@ -57,9 +57,9 @@ export default function Navbar({
               )}
             </button>
 
-            {/* Asesora Panel Access */}
-            {isAsesoraLoggedIn ? (
-              <div className="flex items-center space-x-2">
+            {/* Asesora Active Session Badge & Logout */}
+            {isAsesoraLoggedIn && (
+              <div className="flex items-center space-x-2 animate-fadeIn">
                 <button
                   onClick={onOpenAdminPanel}
                   className="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition-all flex items-center space-x-1.5 cursor-pointer shadow-md"
@@ -75,14 +75,6 @@ export default function Navbar({
                   <LogOut className="w-4 h-4" />
                 </button>
               </div>
-            ) : (
-              <button
-                onClick={onOpenAdminPanel}
-                className="px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 transition-all flex items-center space-x-1.5 cursor-pointer shadow-md"
-              >
-                <Lock className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden sm:inline">Acceso Asesora</span>
-              </button>
             )}
 
           </div>
