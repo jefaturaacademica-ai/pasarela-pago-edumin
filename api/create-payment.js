@@ -22,7 +22,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { amount, currency = 'PEN', orderId, customer, mode = 'production' } = req.body || {};
+    const { amount, currency = 'PEN', orderId, customer, mode = 'production', customPassword } = req.body || {};
 
     const username = process.env.IZIPAY_USERNAME || '74025911';
     const endpoint = process.env.IZIPAY_ENDPOINT || 'https://api.micuentaweb.pe';
@@ -47,28 +47,33 @@ export default async function handler(req, res) {
       }
     };
 
-    // Define Credential Sets (Production & Test)
-    const prodCredentials = {
-      name: 'production',
-      password: process.env.IZIPAY_PROD_PASSWORD || process.env.IZIPAY_PASSWORD || 'prodpassword_Vy6dFo4zqtRw5hcArFK3OJLulkeLy8ZcwGkMA9cGWST6e',
-      publicKey: process.env.IZIPAY_PROD_PUBLIC_KEY || process.env.IZIPAY_PUBLIC_KEY || '74025911:publickey_1CQKXa0PBgF9WaUgdifdq74GsfJ5loyKKHQvBalFPOXuf'
-    };
+    // Candidate Passwords to attempt
+    const passwordsToTry = [];
+    if (customPassword && customPassword.trim()) {
+      passwordsToTry.push({
+        name: 'custom',
+        password: customPassword.trim(),
+        publicKey: process.env.IZIPAY_PROD_PUBLIC_KEY || '74025911:publickey_1CQKXa0PBgF9WaUgdifdq74GsfJ5loyKKHQvBalFPOXuf'
+      });
+    }
 
-    const testCredentials = {
-      name: 'test',
-      password: process.env.IZIPAY_TEST_PASSWORD || 'testpassword_Ocqpw5nlHREDJikgqvxDsoeUWcaZ0JGvdKFJC02Arg50C',
-      publicKey: process.env.IZIPAY_TEST_PUBLIC_KEY || '74025911:testpublickey_1L5AjIZ7vATPByuE2QQxDD8lsm5zd9pIWqnKUF4eJHcJ'
-    };
-
-    // Primary attempt order based on user mode
-    const attempts = mode === 'production' 
-      ? [prodCredentials, testCredentials] 
-      : [testCredentials, prodCredentials];
+    passwordsToTry.push(
+      {
+        name: 'production',
+        password: process.env.IZIPAY_PROD_PASSWORD || process.env.IZIPAY_PASSWORD || 'prodpassword_UPpQJbTlmde3Gqwp8bfQTPQaJK1Q7eOqcVtduT9f6l52V',
+        publicKey: process.env.IZIPAY_PROD_PUBLIC_KEY || '74025911:publickey_1CQKXa0PBgF9WaUgdifdq74GsfJ5loyKKHQvBalFPOXuf'
+      },
+      {
+        name: 'test',
+        password: process.env.IZIPAY_TEST_PASSWORD || 'testpassword_Ocqpw5nlHREDJikgqvxDsoeUWcaZ0JGvdKFJC02Arg50C',
+        publicKey: process.env.IZIPAY_TEST_PUBLIC_KEY || '74025911:testpublickey_1L5AjIZ7vATPByuE2QQxDD8lsm5zd9pIWqnKUF4eJHcJ'
+      }
+    );
 
     let lastError = null;
     let lastResponse = null;
 
-    for (const cred of attempts) {
+    for (const cred of passwordsToTry) {
       const authHeader = 'Basic ' + Buffer.from(`${username}:${cred.password}`).toString('base64');
 
       let response = await fetch(primaryUrl, {
@@ -108,7 +113,7 @@ export default async function handler(req, res) {
       lastResponse = data;
     }
 
-    // If both attempts returned error
+    // Return detailed error if all attempts fail
     return res.status(400).json({
       success: false,
       error: `Respuesta de Izipay: ${lastError}`,
