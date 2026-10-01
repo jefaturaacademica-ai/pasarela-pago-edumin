@@ -6,8 +6,10 @@
 
 export const IZIPAY_CONFIG = {
   merchantId: '74025911',
-  testPublicKey: '74025911:testpublickey_1L5AjIZ7vATPByuE2QQxDD8lsm5zd9pIWqnKUF4eJHcJ',
-  prodPublicKey: '74025911:publickey_1CQKXa0PBgF9WaUgdifdq74GsfJ5loyKKHQvBalFPOXuf',
+  testPublicKey: '74025911:testpublickey_1L5AjiZ7vATPByuE2QqXDD8lsm5zd9piWqnKUF4eJHcxJ',
+  prodPublicKey: '74025911:publickey_1cQKXa0PBgf9WaUgdIfdq74GsfJ5loyKKHQvBalFPOXuf',
+  testHmacKey: 'D19YeRz2gfwmyfiX0h5UyOsvcbmuYkAQyNMQqXHM5UFl7',
+  prodHmacKey: 'mR2JvdcDW8i7iHR6s4IMYI4UAwh3Fc7qNwTt7Ip0YVBN9',
   jsClientUrl: 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js',
   cssThemeUrl: 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic-reset.css'
 };

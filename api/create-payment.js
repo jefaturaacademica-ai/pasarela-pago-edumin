@@ -47,28 +47,35 @@ export default async function handler(req, res) {
       }
     };
 
-    // Candidate Passwords to attempt
+    // Candidate Passwords to attempt (using exact copied text strings)
     const passwordsToTry = [];
+    
     if (customPassword && customPassword.trim()) {
       passwordsToTry.push({
         name: 'custom',
         password: customPassword.trim(),
-        publicKey: process.env.IZIPAY_PROD_PUBLIC_KEY || '74025911:publickey_1CQKXa0PBgF9WaUgdifdq74GsfJ5loyKKHQvBalFPOXuf'
+        publicKey: process.env.IZIPAY_PROD_PUBLIC_KEY || '74025911:publickey_1cQKXa0PBgf9WaUgdIfdq74GsfJ5loyKKHQvBalFPOXuf'
       });
     }
 
-    passwordsToTry.push(
-      {
-        name: 'production',
-        password: process.env.IZIPAY_PROD_PASSWORD || process.env.IZIPAY_PASSWORD || 'prodpassword_UPpQJbTlmde3Gqwp8bfQTPQaJK1Q7eOqcVtduT9f6l52V',
-        publicKey: process.env.IZIPAY_PROD_PUBLIC_KEY || '74025911:publickey_1CQKXa0PBgF9WaUgdifdq74GsfJ5loyKKHQvBalFPOXuf'
-      },
-      {
-        name: 'test',
-        password: process.env.IZIPAY_TEST_PASSWORD || 'testpassword_Ocqpw5nlHREDJikgqvxDsoeUWcaZ0JGvdKFJC02Arg50C',
-        publicKey: process.env.IZIPAY_TEST_PUBLIC_KEY || '74025911:testpublickey_1L5AjIZ7vATPByuE2QQxDD8lsm5zd9pIWqnKUF4eJHcJ'
-      }
-    );
+    // Exact Production and Test credentials provided by user
+    const prodCredentials = {
+      name: 'production',
+      password: process.env.IZIPAY_PROD_PASSWORD || process.env.IZIPAY_PASSWORD || 'prodpassword_UPpQJbTlmde3Gqwp8bfQTPQajK1Q7eOqcVtduT9f6l52V',
+      publicKey: process.env.IZIPAY_PROD_PUBLIC_KEY || process.env.IZIPAY_PUBLIC_KEY || '74025911:publickey_1cQKXa0PBgf9WaUgdIfdq74GsfJ5loyKKHQvBalFPOXuf'
+    };
+
+    const testCredentials = {
+      name: 'test',
+      password: process.env.IZIPAY_TEST_PASSWORD || 'testpassword_Ocqpw5nlHREDJikgqvxDsoeUWcaZ0JGvdKfJC02Arg50C',
+      publicKey: process.env.IZIPAY_TEST_PUBLIC_KEY || '74025911:testpublickey_1L5AjiZ7vATPByuE2QqXDD8lsm5zd9piWqnKUF4eJHcxJ'
+    };
+
+    if (mode === 'production') {
+      passwordsToTry.push(prodCredentials, testCredentials);
+    } else {
+      passwordsToTry.push(testCredentials, prodCredentials);
+    }
 
     let lastError = null;
     let lastResponse = null;
@@ -113,7 +120,6 @@ export default async function handler(req, res) {
       lastResponse = data;
     }
 
-    // Return detailed error if all attempts fail
     return res.status(400).json({
       success: false,
       error: `Respuesta de Izipay: ${lastError}`,

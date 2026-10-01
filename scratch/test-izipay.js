@@ -1,10 +1,24 @@
 const username = '74025911';
-const testPassword = 'testpassword_Ocqpw5nlHREDJikgqvxDsoeUWcaZ0JGvdKFJC02Arg50C';
-const prodPassword = 'prodpassword_UPpQJbTlmde3Gqwp8bfQTPQaJK1Q7eOqcVtduT9f6l52V';
 
-async function test(label, password) {
-  const authHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
-  console.log(`\nTesting ${label}...`);
+// Exact copied credentials from user text:
+const prodPassword = 'prodpassword_UPpQJbTlmde3Gqwp8bfQTPQajK1Q7eOqcVtduT9f6l52V';
+const testPassword = 'testpassword_Ocqpw5nlHREDJikgqvxDsoeUWcaZ0JGvdKfJC02Arg50C';
+
+async function testApi(label, pwd) {
+  const authHeader = 'Basic ' + Buffer.from(`${username}:${pwd}`).toString('base64');
+  console.log(`\n--- Probando ${label} ---`);
+  console.log(`Usuario: ${username}`);
+  console.log(`Password: ${pwd}`);
+
+  const payload = {
+    amount: 100,
+    currency: 'PEN',
+    orderId: `EDUMIN-${Date.now()}`,
+    customer: {
+      email: 'alumno@edumin.pe'
+    }
+  };
+
   try {
     const res = await fetch('https://api.micuentaweb.pe/api-payment/V4/Charge/CreatePayment', {
       method: 'POST',
@@ -12,25 +26,23 @@ async function test(label, password) {
         'Authorization': authHeader,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        amount: 100,
-        currency: 'PEN',
-        orderId: `ORD-${Date.now()}`,
-        customer: { email: 'test@edumin.pe' }
-      })
+      body: JSON.stringify(payload)
     });
 
-    const text = await res.text();
-    console.log('Status:', res.status);
-    console.log('Response:', text);
+    const data = await res.json();
+    console.log('Status HTTP:', res.status);
+    console.log('Resultado JSON:', JSON.stringify(data, null, 2));
+    if (data.status === 'SUCCESS' && data.answer?.formToken) {
+      console.log('🎉 ¡CONEXION EXITOSA! Token generado:', data.answer.formToken);
+    }
   } catch (e) {
     console.error('Error:', e.message);
   }
 }
 
 async function run() {
-  await test('TEST KEY', testPassword);
-  await test('PROD KEY', prodPassword);
+  await testApi('PRODUCCION (CLAVE DE TEXTO DEL USUARIO)', prodPassword);
+  await testApi('TEST (CLAVE DE TEXTO DEL USUARIO)', testPassword);
 }
 
 run();
