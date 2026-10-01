@@ -22,32 +22,29 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { amount, currency = 'PEN', orderId, customer, mode = 'test' } = req.body || {};
+    const { amount, currency = 'PEN', orderId, customer, mode = 'production' } = req.body || {};
 
-    // Official Izipay Merchant Credentials (Instituto Técnico Avanza SAC)
+    // Store Merchant ID
     const username = process.env.IZIPAY_USERNAME || '74025911';
     
-    // Select Test or Production Password based on mode or env
-    const isProd = (process.env.IZIPAY_MODE === 'production' || mode === 'production');
-    const password = process.env.IZIPAY_PASSWORD || (
-      isProd 
-        ? 'prodpassword_Vy6dFo4zqtRw5hcArFK3OJLulkeLy8ZcwGkMA9cGWST6e'
-        : 'testpassword_Ocqpw5nlHREDJikgqvxDsoeUWcaZ0JGvdKFJC02Arg50C'
-    );
+    // Select Password & Matching Public Key
+    const isProd = (mode === 'production' || process.env.IZIPAY_MODE === 'production');
+    
+    const password = isProd 
+      ? (process.env.IZIPAY_PROD_PASSWORD || process.env.IZIPAY_PASSWORD || 'prodpassword_Vy6dFo4zqtRw5hcArFK3OJLulkeLy8ZcwGkMA9cGWST6e')
+      : (process.env.IZIPAY_TEST_PASSWORD || 'testpassword_Ocqpw5nlHREDJikgqvxDsoeUWcaZ0JGvdKFJC02Arg50C');
 
-    const publicKey = process.env.IZIPAY_PUBLIC_KEY || (
-      isProd
-        ? '74025911:publickey_1CQKXa0PBgF9WaUgdifdq74GsfJ5loyKKHQvBalFPOXuf'
-        : '74025911:testpublickey_1L5AjIZ7vATPByuE2QQxDD8lsm5zd9pIWqnKUF4eJHcJ'
-    );
+    const publicKey = isProd
+      ? (process.env.IZIPAY_PROD_PUBLIC_KEY || process.env.IZIPAY_PUBLIC_KEY || '74025911:publickey_1CQKXa0PBgF9WaUgdifdq74GsfJ5loyKKHQvBalFPOXuf')
+      : (process.env.IZIPAY_TEST_PUBLIC_KEY || '74025911:testpublickey_1L5AjIZ7vATPByuE2QQxDD8lsm5zd9pIWqnKUF4eJHcJ');
 
     const endpoint = process.env.IZIPAY_ENDPOINT || 'https://api.micuentaweb.pe';
 
-    // Amount in cents (e.g. 540 PEN = 54000)
+    // Amount in cents (e.g. S/ 1.00 = 100 centavos, S/ 540.00 = 54000 centavos)
     const amountInCents = Math.round((parseFloat(amount) || 540) * 100);
     const authHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
     
-    // Izipay REST API V4 endpoint: /api-payment/V4/Charge/CreatePayment or /v1/charge/createPayment
+    // Izipay REST API V4 endpoint: /api-payment/V4/Charge/CreatePayment
     const primaryUrl = `${endpoint}/api-payment/V4/Charge/CreatePayment`;
     const fallbackUrl = `${endpoint}/v1/charge/createPayment`;
 
@@ -75,7 +72,6 @@ export default async function handler(req, res) {
     });
 
     if (!response.ok && response.status === 404) {
-      // Try fallback URL if V4 path returns 404
       response = await fetch(fallbackUrl, {
         method: 'POST',
         headers: {
@@ -100,7 +96,7 @@ export default async function handler(req, res) {
     } else {
       return res.status(400).json({
         success: false,
-        error: data.errorMessage || data._type || 'Error generando formToken con Izipay',
+        error: data.errorMessage || data.answer?.errorMessage || data._type || 'Error generando formToken con Izipay',
         rawResponse: data
       });
     }

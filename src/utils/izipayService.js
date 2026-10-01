@@ -15,7 +15,7 @@ export const IZIPAY_CONFIG = {
 /**
  * Requests a formToken from backend API (/api/create-payment)
  */
-export async function createIzipayPaymentToken({ amount, orderId, customer, mode = 'test' }) {
+export async function createIzipayPaymentToken({ amount, orderId, customer, mode = 'production' }) {
   try {
     const response = await fetch('/api/create-payment', {
       method: 'POST',
@@ -32,7 +32,8 @@ export async function createIzipayPaymentToken({ amount, orderId, customer, mode
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || `HTTP error ${response.status}`);
     }
 
     const data = await response.json();
@@ -40,10 +41,8 @@ export async function createIzipayPaymentToken({ amount, orderId, customer, mode
   } catch (err) {
     console.warn('Backend /api/create-payment fallback active.', err);
     return {
-      success: true,
-      mode: 'test',
-      formToken: `MOCK-TOKEN-${Date.now()}`,
-      publicKey: IZIPAY_CONFIG.testPublicKey
+      success: false,
+      error: err.message || 'Error conectando con servidor Izipay.'
     };
   }
 }
@@ -51,7 +50,7 @@ export async function createIzipayPaymentToken({ amount, orderId, customer, mode
 /**
  * Validates HMAC-SHA-256 signature for IPN / return payload
  */
-export async function validateIzipayPayment({ krHash, krAnswer, mode = 'test' }) {
+export async function validateIzipayPayment({ krHash, krAnswer, mode = 'production' }) {
   try {
     const response = await fetch('/api/validate-payment', {
       method: 'POST',
@@ -68,27 +67,39 @@ export async function validateIzipayPayment({ krHash, krAnswer, mode = 'test' })
 }
 
 /**
- * Dynamically loads the official Izipay V4 Client SDK Script & Theme CSS
+ * Dynamically loads/reloads the official Izipay V4 Client SDK Script with the matching publicKey
  */
-export function loadIzipayScript(publicKey = IZIPAY_CONFIG.testPublicKey) {
+export function loadIzipayScript(publicKey = IZIPAY_CONFIG.prodPublicKey) {
   return new Promise((resolve, reject) => {
-    if (window.KR) {
-      resolve(window.KR);
-      return;
-    }
-
     const existingScript = document.getElementById('izipay-kr-sdk');
+
+    // If script exists but with a DIFFERENT public key, remove it to reload with matching key
     if (existingScript) {
-      existingScript.addEventListener('load', () => resolve(window.KR));
-      existingScript.addEventListener('error', (e) => reject(e));
-      return;
+      const currentKey = existingScript.getAttribute('kr-public-key');
+      if (currentKey !== publicKey) {
+        console.log('Cambiando llave pública Izipay en el DOM:', currentKey, '=>', publicKey);
+        existingScript.remove();
+        if (window.KR) {
+          try {
+            delete window.KR;
+          } catch (e) {
+            window.KR = undefined;
+          }
+        }
+      } else if (window.KR) {
+        resolve(window.KR);
+        return;
+      }
     }
 
-    // Load V4 Theme CSS
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = IZIPAY_CONFIG.cssThemeUrl;
-    document.head.appendChild(link);
+    // Load V4 Theme CSS if not present
+    if (!document.getElementById('izipay-kr-theme')) {
+      const link = document.createElement('link');
+      link.id = 'izipay-kr-theme';
+      link.rel = 'stylesheet';
+      link.href = IZIPAY_CONFIG.cssThemeUrl;
+      document.head.appendChild(link);
+    }
 
     // Load V4 JS SDK
     const script = document.createElement('script');
