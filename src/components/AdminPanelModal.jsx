@@ -22,6 +22,7 @@ import {
   Edit3
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { generatePaymentSignature } from '../utils/securityUtils';
 
 export default function AdminPanelModal({ 
   isOpen, 
@@ -109,6 +110,8 @@ export default function AdminPanelModal({
     const isCuota = formData.payType === 'cuotas';
     const cuotaLabel = isCuota ? `Cuota 1 de ${formData.totalCuotas} - ${formData.packageName}` : `${formData.packageName} (Contado)`;
 
+    const sig = generatePaymentSignature(linkId, currentPayAmount, cuotaLabel);
+
     const query = new URLSearchParams({
       id: linkId,
       cliente: formData.clientName,
@@ -116,6 +119,7 @@ export default function AdminPanelModal({
       email: formData.email,
       monto: currentPayAmount,
       pkg: cuotaLabel,
+      sig: sig
     }).toString();
 
     const fullUrl = `${origin}/#checkout?${query}`;
@@ -141,6 +145,7 @@ export default function AdminPanelModal({
       createdDate: today.toLocaleDateString('es-PE'),
       nextDueDate: isCuota ? nextMonth.toLocaleDateString('es-PE') : 'Finalizado',
       currentLinkUrl: fullUrl,
+      sig: sig
     };
 
     setCurrentCreatedPlan(planRecord);
@@ -159,6 +164,8 @@ export default function AdminPanelModal({
     const linkId = 'PAY-CUSTOM-' + Math.floor(100000 + Math.random() * 900000);
     const origin = window.location.origin;
 
+    const sig = generatePaymentSignature(linkId, customLinkData.customAmount, customLinkData.customConcept);
+
     const query = new URLSearchParams({
       id: linkId,
       cliente: customLinkData.clientName,
@@ -166,6 +173,7 @@ export default function AdminPanelModal({
       email: customLinkData.email,
       monto: customLinkData.customAmount,
       pkg: customLinkData.customConcept,
+      sig: sig
     }).toString();
 
     const fullUrl = `${origin}/#checkout?${query}`;
@@ -186,6 +194,7 @@ export default function AdminPanelModal({
       createdDate: new Date().toLocaleDateString('es-PE'),
       nextDueDate: 'Pago Único',
       currentLinkUrl: fullUrl,
+      sig: sig
     };
 
     setCurrentCreatedPlan(planRecord);
@@ -222,6 +231,8 @@ export default function AdminPanelModal({
     const origin = window.location.origin;
     const cuotaLabel = `Cuota ${nextCuotaNum} de ${plan.totalCuotas} - ${plan.packageName}`;
 
+    const sig = generatePaymentSignature(linkId, plan.cuotaAmount, cuotaLabel);
+
     const query = new URLSearchParams({
       id: linkId,
       cliente: plan.clientName,
@@ -229,6 +240,7 @@ export default function AdminPanelModal({
       email: plan.email,
       monto: plan.cuotaAmount,
       pkg: cuotaLabel,
+      sig: sig
     }).toString();
 
     const fullUrl = `${origin}/#checkout?${query}`;

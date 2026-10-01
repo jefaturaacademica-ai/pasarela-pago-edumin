@@ -12,6 +12,8 @@ import StudentCheckoutModal from './components/StudentCheckoutModal';
 import FloatingWhatsapp from './components/FloatingWhatsapp';
 import Footer from './components/Footer';
 
+import { validatePaymentIntegrity } from './utils/securityUtils';
+
 export default function App() {
   // Official Specialization Packages
   const packages = [
@@ -156,7 +158,7 @@ export default function App() {
     setIsIzipayCheckoutOpen(true);
   };
 
-  // Hash Routing
+  // Hash Routing with Security & Parameter Tampering Validation
   useEffect(() => {
     const checkHashOrder = () => {
       const hash = window.location.hash;
@@ -175,13 +177,33 @@ export default function App() {
         const queryStr = hash.split('?')[1];
         const params = new URLSearchParams(queryStr);
         if (params.get('cliente') && params.get('monto')) {
+          const reqId = params.get('id') || 'PAGO-CUSTOM';
+          const reqAmount = Number(params.get('monto')) || 540;
+          const reqPkg = params.get('pkg') || 'PROGRAMA COMPLETO';
+          const reqSig = params.get('sig') || '';
+
+          // Validate link integrity against cryptographic signature & official package prices
+          const validation = validatePaymentIntegrity({
+            orderId: reqId,
+            amount: reqAmount,
+            packageName: reqPkg,
+            sig: reqSig
+          });
+
+          if (!validation.valid) {
+            alert(`⛔ ALERTA DE SEGURIDAD:\n\n${validation.error}\n\nPor favor solicita un nuevo enlace oficial a tu asesora educativa EDUMIN.`);
+            window.location.hash = '';
+            return;
+          }
+
           const studentOrder = {
-            id: params.get('id') || 'PAGO-CUSTOM',
+            id: reqId,
             clientName: params.get('cliente'),
             phone: params.get('tel') || '',
             email: params.get('email') || '',
-            amount: Number(params.get('monto')) || 540,
-            packageName: params.get('pkg') || 'PROGRAMA COMPLETO',
+            amount: reqAmount,
+            packageName: reqPkg,
+            sig: reqSig
           };
           setActiveStudentCheckoutData(studentOrder);
           setIsStudentCheckoutOpen(true);

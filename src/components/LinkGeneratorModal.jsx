@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
+import { generatePaymentSignature } from '../utils/securityUtils';
+
 export default function LinkGeneratorModal({ 
   isOpen, 
   onClose, 
@@ -55,8 +57,11 @@ export default function LinkGeneratorModal({
     e.preventDefault();
     const linkId = 'PAY-' + Math.floor(100000 + Math.random() * 900000);
     const origin = window.location.origin;
+
+    // Generate SHA-256 HMAC cryptographic signature to prevent parameter tampering
+    const sig = generatePaymentSignature(linkId, formData.amount, formData.packageName);
     
-    // Create URL parameter string
+    // Create URL parameter string with signature
     const query = new URLSearchParams({
       id: linkId,
       cliente: formData.clientName,
@@ -64,6 +69,7 @@ export default function LinkGeneratorModal({
       email: formData.email,
       monto: formData.amount,
       pkg: formData.packageName,
+      sig: sig
     }).toString();
 
     const fullUrl = `${origin}/#checkout?${query}`;
@@ -76,6 +82,7 @@ export default function LinkGeneratorModal({
       email: formData.email,
       amount: formData.amount,
       packageName: formData.packageName,
+      sig: sig,
       url: fullUrl,
       createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       status: 'Generado',
