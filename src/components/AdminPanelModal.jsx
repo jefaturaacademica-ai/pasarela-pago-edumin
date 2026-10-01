@@ -283,54 +283,65 @@ export default function AdminPanelModal({
           </div>
         </div>
 
+        {/* Security Shield Banner */}
+        <div className="p-3 bg-blue-950/80 border border-blue-800/80 rounded-2xl flex items-start space-x-2.5 text-xs text-blue-200 mb-5 shadow-inner">
+          <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+          <div className="space-y-0.5">
+            <strong className="font-extrabold text-white block">🔐 Generador de Links Únicos Seguros (Firma SHA-256 Anti-Alteración)</strong>
+            <p className="text-[11px] text-slate-300">
+              Todos los enlaces generados incluyen un sello criptográfico único (`&sig=...`). Si un alumno intenta modificar el monto en la URL (ej. cambiar 540 por 10), el sistema **bloqueará de inmediato** la pasarela.
+            </p>
+          </div>
+        </div>
+
         {/* Tabs Bar */}
         <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-3 mb-6">
           <button
             onClick={() => setActiveTab('new')}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
               activeTab === 'new'
-                ? 'bg-amber-400 text-slate-950 shadow-md'
+                ? 'bg-amber-400 text-slate-950 shadow-md font-extrabold'
                 : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
             }`}
           >
             <PlusCircle className="w-3.5 h-3.5" />
-            <span>Link por Paquete</span>
+            <span>🔐 Link Único por Programa</span>
           </button>
 
           <button
             onClick={() => setActiveTab('custom_link')}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
               activeTab === 'custom_link'
-                ? 'bg-amber-400 text-slate-950 shadow-md'
+                ? 'bg-amber-400 text-slate-950 shadow-md font-extrabold'
                 : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
             }`}
           >
             <Edit3 className="w-3.5 h-3.5" />
-            <span>Monto Libre (100 / 120)</span>
+            <span>⚡ Link Único Monto Libre</span>
           </button>
 
           <button
             onClick={() => setActiveTab('installments')}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
               activeTab === 'installments'
-                ? 'bg-amber-400 text-slate-950 shadow-md'
+                ? 'bg-amber-400 text-slate-950 shadow-md font-extrabold'
                 : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
             }`}
           >
             <Calendar className="w-3.5 h-3.5" />
-            <span>Alumnos en Cuotas ({installmentPlans.length})</span>
+            <span>📅 Alumnos en Cuotas ({installmentPlans.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('history')}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
               activeTab === 'history'
-                ? 'bg-amber-400 text-slate-950 shadow-md'
+                ? 'bg-amber-400 text-slate-950 shadow-md font-extrabold'
                 : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
             }`}
           >
             <History className="w-3.5 h-3.5" />
-            <span>Historial</span>
+            <span>📜 Historial</span>
           </button>
         </div>
 
