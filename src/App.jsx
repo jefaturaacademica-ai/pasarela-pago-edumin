@@ -164,12 +164,9 @@ export default function App() {
       const hash = window.location.hash;
       
       if (hash.includes('admin') || hash.includes('asesora')) {
-        if (!asesoraSession) {
-          setIsAsesoraLoginOpen(true);
-        } else {
-          setSelectedPackageForAdmin(packages[0]);
-          setIsAdminPanelOpen(true);
-        }
+        setSelectedPackageForAdmin(packages[0]);
+        setIsAdminPanelOpen(true);
+        setIsAsesoraLoginOpen(false);
         return;
       }
 
@@ -369,7 +366,12 @@ export default function App() {
       {/* Administradora & Asesora Management Panel Modal */}
       <AdminPanelModal
         isOpen={isAdminPanelOpen}
-        onClose={() => setIsAdminPanelOpen(false)}
+        onClose={() => {
+          setIsAdminPanelOpen(false);
+          if (window.location.hash.includes('admin') || window.location.hash.includes('asesora')) {
+            window.location.hash = '';
+          }
+        }}
         initialPackage={selectedPackageForAdmin}
         installmentPlans={installmentPlans}
         onSaveInstallmentPlan={handleSaveInstallmentPlan}
@@ -380,7 +382,12 @@ export default function App() {
       {/* Custom Link Student Payment Modal */}
       <StudentCheckoutModal
         isOpen={isStudentCheckoutOpen}
-        onClose={() => setIsStudentCheckoutOpen(false)}
+        onClose={() => {
+          setIsStudentCheckoutOpen(false);
+          if (window.location.hash.includes('checkout')) {
+            window.location.hash = '';
+          }
+        }}
         linkData={activeStudentCheckoutData}
       />
 
