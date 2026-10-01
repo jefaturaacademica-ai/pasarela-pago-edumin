@@ -28,7 +28,7 @@ export default function AdminPanelModal({
   isOpen, 
   onClose, 
   initialPackage,
-  installmentPlans,
+  installmentPlans = [],
   onSaveInstallmentPlan,
   onUpdateInstallmentStatus,
   onPreviewStudentCheckout
@@ -71,8 +71,8 @@ export default function AdminPanelModal({
   };
 
   useEffect(() => {
-    if (initialPackage) {
-      const preset = cuotaPresets[initialPackage.title] || { full: initialPackage.basePrice, cuota: 300, defaultCuotas: 2 };
+    if (initialPackage && initialPackage.title) {
+      const preset = cuotaPresets[initialPackage.title] || { full: initialPackage.basePrice || 540, cuota: 300, defaultCuotas: 2 };
       setFormData({
         clientName: '',
         phone: '',
