@@ -19,7 +19,8 @@ import {
   History,
   AlertCircle,
   FileCheck,
-  Edit3
+  Edit3,
+  ShieldCheck
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { generatePaymentSignature } from '../utils/securityUtils';

@@ -96,13 +96,45 @@ export default function App() {
 
   // Modals & App State
   const [isAsesoraLoginOpen, setIsAsesoraLoginOpen] = useState(false);
-  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const h = window.location.hash || '';
+      return h.includes('admin') || h.includes('asesora');
+    }
+    return false;
+  });
   const [isStudentRegisterOpen, setIsStudentRegisterOpen] = useState(false);
-  const [isStudentCheckoutOpen, setIsStudentCheckoutOpen] = useState(false);
+  const [isStudentCheckoutOpen, setIsStudentCheckoutOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const h = window.location.hash || '';
+      return h.includes('checkout') && h.includes('?');
+    }
+    return false;
+  });
   
-  const [selectedPackageForAdmin, setSelectedPackageForAdmin] = useState(null);
+  const [selectedPackageForAdmin, setSelectedPackageForAdmin] = useState(packages[0]);
   const [studentSelectionData, setStudentSelectionData] = useState(null);
-  const [activeStudentCheckoutData, setActiveStudentCheckoutData] = useState(null);
+  const [activeStudentCheckoutData, setActiveStudentCheckoutData] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const h = window.location.hash || '';
+      if (h.includes('checkout') && h.includes('?')) {
+        const queryStr = h.split('?')[1];
+        const params = new URLSearchParams(queryStr);
+        if (params.get('cliente') || params.get('monto')) {
+          return {
+            id: params.get('id') || 'PAGO-CUSTOM',
+            clientName: params.get('cliente') || '',
+            phone: params.get('tel') || '',
+            email: params.get('email') || '',
+            amount: Number(params.get('monto')) || 540,
+            packageName: params.get('pkg') || 'PROGRAMA COMPLETO',
+            sig: params.get('sig') || ''
+          };
+        }
+      }
+    }
+    return null;
+  });
 
   // Installment plans saved in Memory DB
   const [installmentPlans, setInstallmentPlans] = useState([
@@ -161,7 +193,7 @@ export default function App() {
   // Hash Routing with Security & Parameter Tampering Validation
   useEffect(() => {
     const checkHashOrder = () => {
-      const hash = window.location.hash;
+      const hash = window.location.hash || '';
       
       if (hash.includes('admin') || hash.includes('asesora')) {
         setSelectedPackageForAdmin(packages[0]);
@@ -173,7 +205,7 @@ export default function App() {
       if (hash.includes('checkout') && hash.includes('?')) {
         const queryStr = hash.split('?')[1];
         const params = new URLSearchParams(queryStr);
-        if (params.get('cliente') && params.get('monto')) {
+        if (params.get('cliente') || params.get('monto')) {
           const reqId = params.get('id') || 'PAGO-CUSTOM';
           const reqAmount = Number(params.get('monto')) || 540;
           const reqPkg = params.get('pkg') || 'PROGRAMA COMPLETO';
@@ -195,7 +227,7 @@ export default function App() {
 
           const studentOrder = {
             id: reqId,
-            clientName: params.get('cliente'),
+            clientName: params.get('cliente') || '',
             phone: params.get('tel') || '',
             email: params.get('email') || '',
             amount: reqAmount,
@@ -211,7 +243,7 @@ export default function App() {
     checkHashOrder();
     window.addEventListener('hashchange', checkHashOrder);
     return () => window.removeEventListener('hashchange', checkHashOrder);
-  }, [asesoraSession]);
+  }, []);
 
   const handleOpenAdminPanel = (pkgData) => {
     if (!asesoraSession) {
