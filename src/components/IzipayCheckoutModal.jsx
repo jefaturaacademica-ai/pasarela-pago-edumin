@@ -628,36 +628,36 @@ export default function IzipayCheckoutModal({
                     
                     {/* Official Izipay Krypton Embedded Smart Form */}
                     {formToken && (
-                      <div className="p-3 border border-slate-200 bg-slate-50 rounded-xl space-y-2">
-                        <div className="flex items-center justify-between text-xs font-bold text-slate-800 border-b border-slate-200 pb-2">
+                      <div className="p-4 sm:p-5 border border-slate-200 bg-white rounded-2xl shadow-sm space-y-3 w-full max-w-md mx-auto">
+                        <div className="flex items-center justify-between text-xs font-bold text-slate-800 border-b border-slate-100 pb-3">
                           <span className="flex items-center gap-1.5">
                             <CreditCard className="w-4 h-4 text-[#00a499]" />
-                            Formulario de Cobro Bancario Directo (Tarjetas Visa/Mastercard/Amex/Diners)
+                            Formulario de Cobro Bancario Directo (Tarjetas)
                           </span>
-                          <span className="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-mono">
+                          <span className="text-[10px] px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-mono font-bold">
                             formToken Activo
                           </span>
                         </div>
 
-                        {/* OFFICIAL IZIPAY KR-EMBEDDED CONTAINER */}
+                        {/* OFFICIAL IZIPAY KR-EMBEDDED CONTAINER (CENTRADOS) */}
                         <div 
                           key={`${orderNumber}-${activeAmount}-${studentEmail}`}
                           ref={krContainerRef}
-                          className="kr-embedded py-2" 
+                          className="kr-embedded py-2 w-full flex flex-col items-center justify-center" 
                           kr-form-token={formToken}
                         >
                           {/* Standard Izipay Form Fields */}
-                          <div className="kr-pan my-1"></div>
-                          <div className="kr-expiry my-1"></div>
-                          <div className="kr-security-code my-1"></div>
+                          <div className="kr-pan my-1 w-full"></div>
+                          <div className="kr-expiry my-1 w-full"></div>
+                          <div className="kr-security-code my-1 w-full"></div>
                           
                           {/* Submit button rendered by Izipay SDK */}
-                          <button className="kr-payment-button w-full bg-[#00a499] text-white font-black py-3 rounded-xl shadow-md mt-3 cursor-pointer">
+                          <button className="kr-payment-button w-full bg-[#00a499] text-white font-black py-3.5 rounded-xl shadow-md mt-3 cursor-pointer">
                             Pagar S/ {activeAmount}.00 con Tarjeta
                           </button>
 
                           {/* Error messaging rendered by Izipay SDK */}
-                          <div className="kr-form-error text-xs text-rose-600 font-bold mt-2"></div>
+                          <div className="kr-form-error text-xs text-rose-600 font-bold mt-2 text-center w-full"></div>
                         </div>
                       </div>
                     )}

@@ -49,3 +49,108 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* ==========================================================================
+   🎨 ESTILOS Y CENTRADO DE LA PASARELA DE PAGO IZIPAY (KR-EMBEDDED)
+   Ubicación: src/index.css
+   Puedes editar las siguientes reglas para modificar el centrado, colores o anchos:
+   ========================================================================== */
+
+/* 1. Contenedor principal de Izipay: Centrado flex y alineación al centro */
+.kr-embedded {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+  padding: 8px 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* 2. Todos los campos de tarjeta (Número, Fecha, CVV, Cuotas, Titular) centrados y al 100% de ancho */
+.kr-embedded .kr-pan,
+.kr-embedded .kr-expiry,
+.kr-embedded .kr-security-code,
+.kr-embedded .kr-installment-number,
+.kr-embedded .kr-first-installment-delay,
+.kr-embedded .kr-card-holder-name,
+.kr-embedded .kr-field,
+.kr-embedded .kr-field-element,
+.kr-embedded .kr-popin-button {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  margin-top: 6px !important;
+  margin-bottom: 6px !important;
+  box-sizing: border-box !important;
+}
+
+/* 3. Inputs y desplegables de Izipay */
+.kr-embedded input,
+.kr-embedded select,
+.kr-embedded .kr-field-element input {
+  width: 100% !important;
+  max-width: 100% !important;
+  border-radius: 10px !important;
+  border: 1px solid #cbd5e1 !important;
+  padding: 11px 14px !important;
+  font-size: 13px !important;
+  color: #1e293b !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  box-sizing: border-box !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+/* Efecto al hacer foco (clic) en un campo */
+.kr-embedded input:focus,
+.kr-embedded select:focus {
+  border-color: #00a499 !important;
+  box-shadow: 0 0 0 3px rgba(0, 164, 153, 0.2) !important;
+  outline: none !important;
+}
+
+/* 4. Botón principal de cobro Izipay (Centrado, Verde Izipay #00a499 y 100% de ancho) */
+.kr-embedded .kr-payment-button,
+button.kr-payment-button {
+  width: 100% !important;
+  max-width: 100% !important;
+  background: linear-gradient(135deg, #00a499 0%, #00897b 100%) !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  font-size: 14px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  padding: 14px 20px !important;
+  border-radius: 12px !important;
+  border: none !important;
+  margin-top: 16px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 14px rgba(0, 164, 153, 0.35) !important;
+  transition: all 0.2s ease-in-out !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.kr-embedded .kr-payment-button:hover,
+button.kr-payment-button:hover {
+  background: linear-gradient(135deg, #00897b 0%, #00796b 100%) !important;
+  box-shadow: 0 6px 18px rgba(0, 164, 153, 0.5) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* 5. Mensajes de validación y error */
+.kr-embedded .kr-form-error {
+  text-align: center !important;
+  width: 100% !important;
+  font-size: 12px !important;
+  color: #e11d48 !important;
+  margin-top: 8px !important;
+}
+
