@@ -265,6 +265,7 @@ export default function IzipayCheckoutModal({
       diplomado: studentDiplomado.trim()
     }));
 
+    setIsProcessingPayment(true);
     setStep('payment');
   };
 
@@ -317,6 +318,14 @@ export default function IzipayCheckoutModal({
               'kr-post-url-success': window.location.origin + '/payment-success'
             });
 
+            // Listen to form submit start event in Krypton SDK
+            if (typeof window.KR.onFormSubmit === 'function') {
+              window.KR.onFormSubmit(() => {
+                setIsProcessingPayment(true);
+                return true;
+              });
+            }
+
             // Listen to real transaction submit & error events
             window.KR.onSubmit((paymentData) => {
               console.log('Transacción Izipay Real Exitosa:', paymentData);
@@ -344,11 +353,6 @@ export default function IzipayCheckoutModal({
               if (onPaymentSuccess) onPaymentSuccess(txRecord);
               confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
 
-              // Auto-open WhatsApp Commercial
-              setTimeout(() => {
-                window.open(getCommercialWhatsappUrl(), '_blank');
-              }, 800);
-
               return false;
             });
 
@@ -374,7 +378,10 @@ export default function IzipayCheckoutModal({
           notifyN8n('ERROR', err.message || 'Error de conexión', null);
         }
       } finally {
-        if (isMounted) setLoadingToken(false);
+        if (isMounted) {
+          setLoadingToken(false);
+          setIsProcessingPayment(false);
+        }
       }
     };
 
