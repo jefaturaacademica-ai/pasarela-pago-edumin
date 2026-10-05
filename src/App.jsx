@@ -120,16 +120,20 @@ export default function App() {
       if (h.includes('checkout') && h.includes('?')) {
         const queryStr = h.split('?')[1];
         const params = new URLSearchParams(queryStr);
-        if (params.get('cliente') || params.get('monto')) {
+        if (params.get('cliente') || params.get('nom') || params.get('monto')) {
           return {
             id: params.get('id') || 'PAGO-CUSTOM',
+            firstName: params.get('nom') || '',
+            lastName: params.get('ape') || '',
             clientName: params.get('cliente') || '',
+            dni: params.get('dni') || '',
             phone: params.get('tel') || '',
             email: params.get('email') || '',
             diplomado: params.get('dip') || params.get('diplomado') || '',
             amount: Number(params.get('monto')) || 540,
             packageName: params.get('pkg') || 'PROGRAMA COMPLETO',
-            sig: params.get('sig') || ''
+            sig: params.get('sig') || '',
+            exp: params.get('exp') || ''
           };
         }
       }
@@ -206,7 +210,7 @@ export default function App() {
       if (hash.includes('checkout') && hash.includes('?')) {
         const queryStr = hash.split('?')[1];
         const params = new URLSearchParams(queryStr);
-        if (params.get('cliente') || params.get('monto')) {
+        if (params.get('cliente') || params.get('nom') || params.get('monto')) {
           const reqId = params.get('id') || 'PAGO-CUSTOM';
           const reqAmount = Number(params.get('monto')) || 540;
           const reqPkg = params.get('pkg') || 'PROGRAMA COMPLETO';
@@ -230,7 +234,10 @@ export default function App() {
 
           const studentOrder = {
             id: reqId,
+            firstName: params.get('nom') || '',
+            lastName: params.get('ape') || '',
             clientName: params.get('cliente') || '',
+            dni: params.get('dni') || '',
             phone: params.get('tel') || '',
             email: params.get('email') || '',
             diplomado: params.get('dip') || params.get('diplomado') || '',

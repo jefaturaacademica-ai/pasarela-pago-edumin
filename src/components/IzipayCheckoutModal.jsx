@@ -22,6 +22,18 @@ import confetti from 'canvas-confetti';
 import { createIzipayPaymentToken, loadIzipayScript, IZIPAY_CONFIG } from '../utils/izipayService';
 import { DIPLOMADOS_LIST } from '../utils/diplomadosData';
 
+function splitName(fullNameStr = '') {
+  const parts = fullNameStr.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return { firstName: '', lastName: '' };
+  if (parts.length === 1) return { firstName: parts[0], lastName: '' };
+  if (parts.length === 2) return { firstName: parts[0], lastName: parts[1] };
+  const middle = Math.ceil(parts.length / 2);
+  return {
+    firstName: parts.slice(0, middle).join(' '),
+    lastName: parts.slice(middle).join(' ')
+  };
+}
+
 export default function IzipayCheckoutModal({ 
   isOpen, 
   onClose, 
@@ -34,8 +46,10 @@ export default function IzipayCheckoutModal({
   // Step state: 'info' (Datos del Alumno) -> 'payment' (Formulario Izipay)
   const [step, setStep] = useState('info');
 
-  // Student form fields
-  const [studentName, setStudentName] = useState('');
+  // Student form fields (Separated Nombres, Apellidos, and DNI)
+  const [studentFirstName, setStudentFirstName] = useState('');
+  const [studentLastName, setStudentLastName] = useState('');
+  const [studentDni, setStudentDni] = useState('');
   const [studentEmail, setStudentEmail] = useState('');
   const [studentPhone, setStudentPhone] = useState('');
   const [studentDiplomado, setStudentDiplomado] = useState('');
@@ -82,6 +96,10 @@ export default function IzipayCheckoutModal({
   // Helper function to send webhook notification to n8n
   const notifyN8n = async (status, errorMsg = null, paymentData = null) => {
     try {
+      const nowIso = new Date().toISOString();
+      const nowPE = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
+      const fullName = `${studentFirstName.trim()} ${studentLastName.trim()}`.trim();
+
       await fetch('/api/notify-n8n', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -90,10 +108,20 @@ export default function IzipayCheckoutModal({
           orderNumber,
           amount: activeAmount,
           currency: 'PEN',
+          paymentDate: nowIso,
+          paymentDateFormatted: nowPE,
+          nombres: studentFirstName.trim(),
+          apellidos: studentLastName.trim(),
+          nombreCompleto: fullName,
+          dni: studentDni.trim(),
           customer: {
-            name: studentName.trim() || 'Alumno EDUMIN',
+            firstName: studentFirstName.trim(),
+            lastName: studentLastName.trim(),
+            fullName: fullName,
+            name: fullName,
             email: studentEmail.trim() || 'alumno@edumin.pe',
             phone: studentPhone.trim() || '987654321',
+            dni: studentDni.trim(),
             diplomado: studentDiplomado.trim() || 'No especificado'
           },
           diplomado: studentDiplomado.trim() || 'No especificado',
@@ -110,15 +138,19 @@ export default function IzipayCheckoutModal({
 
   // Commercial WhatsApp Link pre-filled message
   const getCommercialWhatsappUrl = () => {
+    const nowPE = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
+    const fullName = `${studentFirstName.trim()} ${studentLastName.trim()}`.trim();
     const message = `Hola Comercial EDUMIN 🎓, acabo de realizar mi pago con éxito en la pasarela Izipay.\n\n` +
       `📌 *Número de Pedido:* ${orderNumber}\n` +
-      `👤 *Alumno:* ${studentName || 'Alumno'}\n` +
+      `👤 *Alumno:* ${fullName || 'Alumno'}\n` +
+      `🆔 *DNI / Documento:* ${studentDni || 'No especificado'}\n` +
       `🎓 *Diplomado:* ${studentDiplomado || 'No especificado'}\n` +
       `📧 *Correo:* ${studentEmail || 'Correo'}\n` +
       `📱 *Teléfono:* ${studentPhone || 'Teléfono'}\n` +
       `📚 *Programa:* ${packageName}\n` +
-      `💳 *Monto Pagado:* S/ ${activeAmount}.00 PEN\n\n` +
-      `Por favor solicito la confirmación de mi matrícula e ingreso al aula virtual.`;
+      `💳 *Monto Pagado:* S/ ${activeAmount}.00 PEN\n` +
+      `📅 *Fecha de Pago:* ${nowPE}\n\n` +
+      `Por favor solicito la confirmación de mi matrícula e ingreso al aula virtual en Q10.`;
     return `https://wa.me/51951101765?text=${encodeURIComponent(message)}`;
   };
 
@@ -132,23 +164,39 @@ export default function IzipayCheckoutModal({
       setCustomAmount(null);
       setFormValidationError('');
 
-      let nameToSet = '';
+      let firstNameToSet = '';
+      let lastNameToSet = '';
+      let dniToSet = '';
       let emailToSet = '';
       let phoneToSet = '';
       let diplomadoToSet = '';
 
       // Pre-fill student data if provided via props or localStorage
       if (initialStudentData) {
-        if (initialStudentData.name) nameToSet = initialStudentData.name;
+        if (initialStudentData.firstName) firstNameToSet = initialStudentData.firstName;
+        if (initialStudentData.lastName) lastNameToSet = initialStudentData.lastName;
+        if (!firstNameToSet && !lastNameToSet && (initialStudentData.clientName || initialStudentData.name)) {
+          const split = splitName(initialStudentData.clientName || initialStudentData.name);
+          firstNameToSet = split.firstName;
+          lastNameToSet = split.lastName;
+        }
+        if (initialStudentData.dni) dniToSet = initialStudentData.dni;
         if (initialStudentData.email) emailToSet = initialStudentData.email;
-        if (initialStudentData.phone) phoneToSet = initialStudentData.phone;
-        if (initialStudentData.diplomado) diplomadoToSet = initialStudentData.diplomado;
+        if (initialStudentData.phone || initialStudentData.tel) phoneToSet = initialStudentData.phone || initialStudentData.tel;
+        if (initialStudentData.diplomado || initialStudentData.dip) diplomadoToSet = initialStudentData.diplomado || initialStudentData.dip;
       } else {
         const savedStudent = localStorage.getItem('edumin_last_student_info');
         if (savedStudent) {
           try {
             const parsed = JSON.parse(savedStudent);
-            if (parsed.name) nameToSet = parsed.name;
+            if (parsed.firstName) firstNameToSet = parsed.firstName;
+            if (parsed.lastName) lastNameToSet = parsed.lastName;
+            if (!firstNameToSet && !lastNameToSet && parsed.name) {
+              const split = splitName(parsed.name);
+              firstNameToSet = split.firstName;
+              lastNameToSet = split.lastName;
+            }
+            if (parsed.dni) dniToSet = parsed.dni;
             if (parsed.email) emailToSet = parsed.email;
             if (parsed.phone) phoneToSet = parsed.phone;
             if (parsed.diplomado) diplomadoToSet = parsed.diplomado;
@@ -158,13 +206,15 @@ export default function IzipayCheckoutModal({
         }
       }
 
-      setStudentName(nameToSet);
+      setStudentFirstName(firstNameToSet);
+      setStudentLastName(lastNameToSet);
+      setStudentDni(dniToSet);
       setStudentEmail(emailToSet);
       setStudentPhone(phoneToSet);
       setStudentDiplomado(diplomadoToSet);
 
-      // If student info and diplomado were prefilled by Admin, SKIP Step 1 and GO DIRECTLY to Izipay payment form!
-      if (nameToSet.trim() && emailToSet.trim() && phoneToSet.trim() && diplomadoToSet.trim()) {
+      // If student info, DNI and diplomado were prefilled by Admin, SKIP Step 1 and GO DIRECTLY to Izipay payment form!
+      if (firstNameToSet.trim() && lastNameToSet.trim() && dniToSet.trim() && emailToSet.trim() && phoneToSet.trim() && diplomadoToSet.trim()) {
         setStep('payment');
       } else {
         setStep('info');
@@ -181,22 +231,33 @@ export default function IzipayCheckoutModal({
       setFormValidationError('Por favor selecciona el Diplomado al que deseas inscribirte.');
       return;
     }
-    if (!studentName.trim()) {
-      setFormValidationError('Por favor ingresa tus Nombres y Apellidos completos.');
+    if (!studentFirstName.trim()) {
+      setFormValidationError('Por favor ingresa tus Nombres.');
+      return;
+    }
+    if (!studentLastName.trim()) {
+      setFormValidationError('Por favor ingresa tus Apellidos.');
+      return;
+    }
+    if (!studentDni.trim() || studentDni.trim().length < 5) {
+      setFormValidationError('Por favor ingresa tu DNI / Documento de Identidad válido (mínimo 5 caracteres).');
       return;
     }
     if (!studentEmail.trim() || !studentEmail.includes('@')) {
       setFormValidationError('Por favor ingresa un Correo Electrónico válido.');
       return;
     }
-    if (!studentPhone.trim() || studentPhone.length < 6) {
+    if (!studentPhone.trim() || studentPhone.trim().length < 6) {
       setFormValidationError('Por favor ingresa un número de Teléfono / WhatsApp válido.');
       return;
     }
 
-    // Save student info for convenience
+    const fullName = `${studentFirstName.trim()} ${studentLastName.trim()}`.trim();
     localStorage.setItem('edumin_last_student_info', JSON.stringify({
-      name: studentName.trim(),
+      firstName: studentFirstName.trim(),
+      lastName: studentLastName.trim(),
+      name: fullName,
+      dni: studentDni.trim(),
       email: studentEmail.trim(),
       phone: studentPhone.trim(),
       diplomado: studentDiplomado.trim()
@@ -230,7 +291,7 @@ export default function IzipayCheckoutModal({
           amount: activeAmount,
           orderId: orderNumber,
           customer: {
-            fullName: studentName.trim() || 'Alumno EDUMIN',
+            fullName: `${studentFirstName.trim()} ${studentLastName.trim()}`.trim() || 'Alumno EDUMIN',
             email: studentEmail.trim() || 'alumno@edumin.pe',
             phone: studentPhone.trim() || '987654321'
           },
@@ -262,7 +323,7 @@ export default function IzipayCheckoutModal({
               // Notify n8n Webhook
               notifyN8n('SUCCESS', null, paymentData);
 
-              if (onPaymentSuccess) onPaymentSuccess(orderNumber, { name: studentName, email: studentEmail, phone: studentPhone }, activeAmount);
+              if (onPaymentSuccess) onPaymentSuccess(orderNumber, { name: `${studentFirstName} ${studentLastName}`, email: studentEmail, phone: studentPhone, dni: studentDni }, activeAmount);
               confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
 
               // Auto-open WhatsApp Commercial
@@ -372,7 +433,11 @@ export default function IzipayCheckoutModal({
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Alumno Registrado:</span>
-                <span className="font-bold text-slate-900 font-sans">{studentName}</span>
+                <span className="font-bold text-slate-900 font-sans">{studentFirstName} {studentLastName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">DNI / Documento:</span>
+                <span className="font-bold text-slate-900 font-mono text-amber-600">{studentDni}</span>
               </div>
               {studentDiplomado && (
                 <div className="flex justify-between">
@@ -516,7 +581,7 @@ export default function IzipayCheckoutModal({
                       Paso 1: Datos del Alumno
                     </span>
                     <span className="text-[10px] font-bold text-slate-500 bg-slate-200 px-2 py-0.5 rounded-full">
-                      Requerido por Izipay
+                      Requerido para Matrícula Q10
                     </span>
                   </div>
 
@@ -568,23 +633,59 @@ export default function IzipayCheckoutModal({
                     </select>
                   </div>
 
-                  {/* FIELD 2: NOMBRES Y APELLIDOS */}
+                  {/* FIELD 2: NOMBRES Y APELLIDOS SEPARADOS */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1">
+                        <User className="w-3.5 h-3.5 text-slate-500" />
+                        Nombres *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ej. Juan Carlos"
+                        value={studentFirstName}
+                        onChange={(e) => setStudentFirstName(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#00a499] focus:border-[#00a499] outline-none transition-all shadow-sm"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1">
+                        <User className="w-3.5 h-3.5 text-slate-500" />
+                        Apellidos *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ej. Pérez Ramos"
+                        value={studentLastName}
+                        onChange={(e) => setStudentLastName(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#00a499] focus:border-[#00a499] outline-none transition-all shadow-sm"
+                      />
+                    </div>
+                  </div>
+
+                  {/* FIELD 3: DNI / DOCUMENTO DE IDENTIDAD (REQUERIDO PARA Q10) */}
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1">
-                      <User className="w-3.5 h-3.5 text-slate-500" />
-                      Nombres y Apellidos *
+                    <label className="text-[11px] font-bold text-slate-700 uppercase flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        <ShieldCheck className="w-3.5 h-3.5 text-[#00a499]" />
+                        DNI / Documento de Identidad *
+                      </span>
+                      <span className="text-[10px] text-[#00a499] font-bold">(Para Matrícula Q10)</span>
                     </label>
                     <input
                       type="text"
                       required
-                      placeholder="Ej. Juan Pérez Ramos"
-                      value={studentName}
-                      onChange={(e) => setStudentName(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#00a499] focus:border-[#00a499] outline-none transition-all shadow-sm"
+                      placeholder="Ej. 74829102"
+                      value={studentDni}
+                      onChange={(e) => setStudentDni(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:ring-2 focus:ring-[#00a499] focus:border-[#00a499] outline-none transition-all shadow-sm"
                     />
                   </div>
 
-                  {/* FIELD 3: CORREO ELECTRÓNICO */}
+                  {/* FIELD 4: CORREO ELECTRÓNICO */}
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1">
                       <Mail className="w-3.5 h-3.5 text-slate-500" />
@@ -600,7 +701,7 @@ export default function IzipayCheckoutModal({
                     />
                   </div>
 
-                  {/* FIELD 4: TELÉFONO / WHATSAPP */}
+                  {/* FIELD 5: TELÉFONO / WHATSAPP */}
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1">
                       <Phone className="w-3.5 h-3.5 text-slate-500" />
@@ -643,7 +744,7 @@ export default function IzipayCheckoutModal({
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
                   <div className="space-y-0.5">
                     <span className="font-bold text-slate-900 block flex items-center gap-1">
-                      <User className="w-3.5 h-3.5 text-[#00a499]" /> {studentName}
+                      <User className="w-3.5 h-3.5 text-[#00a499]" /> {studentFirstName} {studentLastName} (DNI: {studentDni})
                     </span>
                     {studentDiplomado && (
                       <span className="text-[11px] font-bold text-[#00a499] block flex items-center gap-1">

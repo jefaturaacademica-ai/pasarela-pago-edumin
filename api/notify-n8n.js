@@ -28,6 +28,12 @@ export default async function handler(req, res) {
       orderNumber,
       amount,
       currency = 'PEN',
+      paymentDate,
+      paymentDateFormatted,
+      nombres,
+      apellidos,
+      nombreCompleto,
+      dni,
       customer,
       diplomado,
       packageName,
@@ -37,6 +43,13 @@ export default async function handler(req, res) {
     } = req.body || {};
 
     const activeDiplomado = diplomado || customer?.diplomado || 'No especificado';
+    const activeDni = dni || customer?.dni || 'No especificado';
+    const activeNombres = nombres || customer?.firstName || '';
+    const activeApellidos = apellidos || customer?.lastName || '';
+    const activeFullName = nombreCompleto || customer?.fullName || customer?.name || `${activeNombres} ${activeApellidos}`.trim() || 'Alumno EDUMIN';
+
+    const nowIso = paymentDate || new Date().toISOString();
+    const nowFormatted = paymentDateFormatted || new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
 
     const payload = {
       event: status === 'SUCCESS' ? 'payment_success' : 'payment_rejected',
@@ -44,11 +57,21 @@ export default async function handler(req, res) {
       orderNumber: orderNumber || 'N/A',
       amount: amount || 0,
       currency: currency,
+      paymentDate: nowIso,
+      paymentDateFormatted: nowFormatted,
+      nombres: activeNombres,
+      apellidos: activeApellidos,
+      nombreCompleto: activeFullName,
+      dni: activeDni,
       diplomado: activeDiplomado,
       customer: {
-        name: customer?.name || customer?.fullName || 'Alumno EDUMIN',
+        firstName: activeNombres,
+        lastName: activeApellidos,
+        fullName: activeFullName,
+        name: activeFullName,
         email: customer?.email || 'alumno@edumin.pe',
         phone: customer?.phone || '987654321',
+        dni: activeDni,
         diplomado: activeDiplomado
       },
       packageName: packageName || 'PROGRAMA DE ESPECIALIZACIÓN EDUMIN',
@@ -59,7 +82,7 @@ export default async function handler(req, res) {
         shopId: '74025911'
       },
       paymentData: paymentData || null,
-      timestamp: new Date().toISOString()
+      timestamp: nowIso
     };
 
     console.log('Enviando notificación a n8n:', payload);

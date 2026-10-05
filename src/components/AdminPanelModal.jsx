@@ -27,9 +27,11 @@ export default function AdminPanelModal({
 }) {
   const [activeTab, setActiveTab] = useState('custom_link'); // 'custom_link' | 'history'
   
-  // Custom Link State (Monto y Concepto libre/seleccionable)
+  // Custom Link State (Monto y Concepto libre/seleccionable con DNI y Nombres/Apellidos)
   const [customLinkData, setCustomLinkData] = useState({
-    clientName: '',
+    clientFirstName: '',
+    clientLastName: '',
+    dni: '',
     phone: '',
     email: '',
     diplomado: '',
@@ -68,6 +70,8 @@ export default function AdminPanelModal({
       ? (customLinkData.customConceptText.trim() || 'OTROS')
       : customLinkData.conceptType;
 
+    const fullName = `${customLinkData.clientFirstName.trim()} ${customLinkData.clientLastName.trim()}`.trim();
+
     // 24 Hours Expiration Timestamp
     const expTimestamp = Date.now() + 24 * 60 * 60 * 1000;
 
@@ -75,9 +79,12 @@ export default function AdminPanelModal({
 
     const query = new URLSearchParams({
       id: linkId,
-      cliente: customLinkData.clientName,
-      tel: customLinkData.phone,
-      email: customLinkData.email,
+      nom: customLinkData.clientFirstName.trim(),
+      ape: customLinkData.clientLastName.trim(),
+      cliente: fullName,
+      dni: customLinkData.dni.trim(),
+      tel: customLinkData.phone.trim(),
+      email: customLinkData.email.trim(),
       dip: customLinkData.diplomado,
       monto: customLinkData.customAmount,
       pkg: finalConcept,
@@ -90,9 +97,12 @@ export default function AdminPanelModal({
 
     const planRecord = {
       id: linkId,
-      clientName: customLinkData.clientName,
-      phone: customLinkData.phone,
-      email: customLinkData.email,
+      firstName: customLinkData.clientFirstName.trim(),
+      lastName: customLinkData.clientLastName.trim(),
+      clientName: fullName,
+      dni: customLinkData.dni.trim(),
+      phone: customLinkData.phone.trim(),
+      email: customLinkData.email.trim(),
       diplomado: customLinkData.diplomado,
       packageName: finalConcept,
       payType: 'custom',
@@ -281,21 +291,44 @@ export default function AdminPanelModal({
                 </select>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-300">1. Nombre del Cliente:</label>
+                  <label className="font-bold text-slate-300">1. Nombres del Cliente:</label>
                   <input
                     type="text"
                     required
-                    placeholder="Ej. Carlos Mendoza"
-                    value={customLinkData.clientName}
-                    onChange={(e) => setCustomLinkData({ ...customLinkData, clientName: e.target.value })}
+                    placeholder="Ej. Carlos Eduardo"
+                    value={customLinkData.clientFirstName}
+                    onChange={(e) => setCustomLinkData({ ...customLinkData, clientFirstName: e.target.value })}
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-300">2. Número de WhatsApp:</label>
+                  <label className="font-bold text-slate-300">2. Apellidos del Cliente:</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej. Mendoza Prado"
+                    value={customLinkData.clientLastName}
+                    onChange={(e) => setCustomLinkData({ ...customLinkData, clientLastName: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300">3. DNI / Documento de Identidad:</label>
+                  <input
+                    type="text"
+                    placeholder="Ej. 74829102 (Opcional)"
+                    value={customLinkData.dni}
+                    onChange={(e) => setCustomLinkData({ ...customLinkData, dni: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-mono text-amber-300"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300">4. Número de WhatsApp:</label>
                   <input
                     type="tel"
                     required
@@ -306,8 +339,8 @@ export default function AdminPanelModal({
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-300">3. Correo Electrónico:</label>
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="font-bold text-slate-300">5. Correo Electrónico:</label>
                   <input
                     type="email"
                     required
