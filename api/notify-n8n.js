@@ -29,11 +29,14 @@ export default async function handler(req, res) {
       amount,
       currency = 'PEN',
       customer,
+      diplomado,
       packageName,
       mode,
       errorMessage,
       paymentData
     } = req.body || {};
+
+    const activeDiplomado = diplomado || customer?.diplomado || 'No especificado';
 
     const payload = {
       event: status === 'SUCCESS' ? 'payment_success' : 'payment_rejected',
@@ -41,10 +44,12 @@ export default async function handler(req, res) {
       orderNumber: orderNumber || 'N/A',
       amount: amount || 0,
       currency: currency,
+      diplomado: activeDiplomado,
       customer: {
         name: customer?.name || customer?.fullName || 'Alumno EDUMIN',
         email: customer?.email || 'alumno@edumin.pe',
-        phone: customer?.phone || '987654321'
+        phone: customer?.phone || '987654321',
+        diplomado: activeDiplomado
       },
       packageName: packageName || 'PROGRAMA DE ESPECIALIZACIÓN EDUMIN',
       mode: mode || 'production',
