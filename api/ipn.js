@@ -3,15 +3,15 @@
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, HEAD');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method === 'OPTIONS') {
+  if (req.method === 'OPTIONS' || req.method === 'HEAD') {
     return res.status(200).end();
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed. Use POST.' });
+  if (req.method === 'GET') {
+    return res.status(200).json({ success: true, message: 'EDUMIN Izipay IPN Endpoint Active' });
   }
 
   try {
