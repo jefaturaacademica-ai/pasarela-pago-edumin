@@ -323,7 +323,22 @@ export default function IzipayCheckoutModal({
               // Notify n8n Webhook
               notifyN8n('SUCCESS', null, paymentData);
 
-              if (onPaymentSuccess) onPaymentSuccess(orderNumber, { name: `${studentFirstName} ${studentLastName}`, email: studentEmail, phone: studentPhone, dni: studentDni }, activeAmount);
+              const txRecord = {
+                orderNumber,
+                firstName: studentFirstName.trim(),
+                lastName: studentLastName.trim(),
+                clientName: `${studentFirstName.trim()} ${studentLastName.trim()}`.trim(),
+                dni: studentDni.trim(),
+                email: studentEmail.trim(),
+                phone: studentPhone.trim(),
+                diplomado: studentDiplomado,
+                packageName: cartItems?.[0]?.title || 'PROGRAMA COMPLETO',
+                amount: activeAmount,
+                status: 'Aprobado Izipay',
+                dateFormatted: new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' })
+              };
+
+              if (onPaymentSuccess) onPaymentSuccess(txRecord);
               confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
 
               // Auto-open WhatsApp Commercial

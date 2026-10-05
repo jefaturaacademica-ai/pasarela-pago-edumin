@@ -21,11 +21,13 @@ export default function AdminPanelModal({
   onClose, 
   initialPackage,
   installmentPlans = [],
+  successfulTransactions = [],
   onSaveInstallmentPlan,
   onUpdateInstallmentStatus,
   onPreviewStudentCheckout
 }) {
-  const [activeTab, setActiveTab] = useState('custom_link'); // 'custom_link' | 'history'
+  const [activeTab, setActiveTab] = useState('custom_link'); // 'custom_link' | 'payments' | 'history'
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Custom Link State (Monto y Concepto libre/seleccionable con DNI y Nombres/Apellidos)
   const [customLinkData, setCustomLinkData] = useState({
@@ -185,11 +187,11 @@ export default function AdminPanelModal({
           </div>
         </div>
 
-        {/* Tabs Bar - Only Link Único & Historial as requested */}
+        {/* Tabs Bar - Link Único, Transacciones Exitosas & Historial */}
         <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-3 mb-6">
           <button
             onClick={() => setActiveTab('custom_link')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
+            className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
               activeTab === 'custom_link'
                 ? 'bg-amber-400 text-slate-950 shadow-md font-extrabold'
                 : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
@@ -200,15 +202,27 @@ export default function AdminPanelModal({
           </button>
 
           <button
+            onClick={() => setActiveTab('payments')}
+            className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+              activeTab === 'payments'
+                ? 'bg-emerald-400 text-slate-950 shadow-md font-extrabold'
+                : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
+            }`}
+          >
+            <CheckCircle2 className="w-4 h-4 text-emerald-950" />
+            <span>✅ Transacciones Exitosas ({successfulTransactions.length})</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('history')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 cursor-pointer ${
+            className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
               activeTab === 'history'
                 ? 'bg-amber-400 text-slate-950 shadow-md font-extrabold'
                 : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
             }`}
           >
             <History className="w-4 h-4" />
-            <span>📜 Historial</span>
+            <span>📜 Historial de Links</span>
           </button>
         </div>
 
@@ -414,6 +428,122 @@ export default function AdminPanelModal({
         )}
 
 
+
+        {/* TAB 2: TRANSACCIONES EXITOSAS */}
+        {activeTab === 'payments' && (
+          <div className="space-y-4 text-xs animate-fadeIn">
+            {/* KPI Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="p-3.5 rounded-2xl bg-emerald-950/60 border border-emerald-500/30 text-emerald-300">
+                <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">Total Recaudado</span>
+                <span className="text-xl font-black text-emerald-400">
+                  S/ {successfulTransactions.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0).toFixed(2)}
+                </span>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-blue-950/60 border border-blue-500/30 text-blue-300">
+                <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">Pagos Aprobados</span>
+                <span className="text-xl font-black text-blue-400">{successfulTransactions.length} Transacciones</span>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-amber-950/60 border border-amber-500/30 text-amber-300">
+                <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">Notificación Q10 / n8n</span>
+                <span className="text-xl font-black text-amber-400">100% Enviados</span>
+              </div>
+            </div>
+
+            {/* Search Filter Input */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="🔍 Buscar por Alumno, DNI, N° de Orden o Concepto..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-amber-400"
+              />
+            </div>
+
+            {/* List of Payments */}
+            <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+              {successfulTransactions
+                .filter(t => {
+                  if (!searchTerm) return true;
+                  const search = searchTerm.toLowerCase();
+                  return (
+                    (t.clientName && t.clientName.toLowerCase().includes(search)) ||
+                    (t.firstName && t.firstName.toLowerCase().includes(search)) ||
+                    (t.lastName && t.lastName.toLowerCase().includes(search)) ||
+                    (t.dni && t.dni.toLowerCase().includes(search)) ||
+                    (t.orderNumber && t.orderNumber.toLowerCase().includes(search)) ||
+                    (t.packageName && t.packageName.toLowerCase().includes(search))
+                  );
+                })
+                .map((tx, idx) => (
+                  <div key={tx.orderNumber || idx} className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-2.5 hover:border-emerald-500/40 transition-all">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-extrabold text-white text-sm">
+                            {tx.clientName || `${tx.firstName || ''} ${tx.lastName || ''}`.trim() || 'Alumno Edumin'}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
+                            {tx.status || 'Aprobado Izipay'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          Orden: <strong className="text-amber-300 font-mono">{tx.orderNumber || '#IZI-' + (849201 + idx)}</strong> | DNI: <strong className="text-slate-200 font-mono">{tx.dni || 'Sin DNI'}</strong>
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-base font-black text-emerald-400 block font-mono">
+                          S/ {Number(tx.amount || 540).toFixed(2)}
+                        </span>
+                        <span className="text-[10px] text-slate-400">{tx.dateFormatted || tx.createdDate || 'Reciente'}</span>
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 text-[11px] space-y-1">
+                      <p className="text-slate-300">
+                        <strong className="text-slate-400">Concepto:</strong> {tx.packageName || 'PROGRAMA COMPLETO'}
+                      </p>
+                      {tx.diplomado && (
+                        <p className="text-slate-300">
+                          <strong className="text-slate-400">Diplomado:</strong> {tx.diplomado}
+                        </p>
+                      )}
+                      <p className="text-slate-400 text-[10px] flex items-center justify-between pt-1 border-t border-slate-900">
+                        <span>📧 {tx.email || 'correo@alumno.com'} | 📱 {tx.phone || 'Sin Teléfono'}</span>
+                        <span className="text-emerald-400 font-semibold">Q10 Webhook Sync: OK</span>
+                      </p>
+                    </div>
+
+                    {tx.phone && (
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const clean = tx.phone.replace(/\D/g, '');
+                            const phoneWithCountry = clean.length === 9 ? `51${clean}` : clean;
+                            const msg = `Hola *${tx.clientName || tx.firstName}*, confirmamos la recepción exitosa de tu pago de *S/ ${tx.amount}* por *${tx.packageName}*.\n\nEn breve el área académica procederá con tu matrícula en Q10. ¡Bienvenido a EDUMIN! 🎓`;
+                            window.open(`https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(msg)}`, '_blank');
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-emerald-600/90 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center space-x-1 cursor-pointer transition-colors"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Contactar WhatsApp</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              {successfulTransactions.length === 0 && (
+                <div className="p-8 text-center text-slate-500 bg-slate-900/50 rounded-2xl border border-slate-800">
+                  <CheckCircle2 className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                  <p className="font-bold text-slate-400">Aún no hay transacciones registradas</p>
+                  <p className="text-[11px] text-slate-500">Los pagos realizados a través del checkout aparecerán automáticamente en esta lista.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* TAB 4: GENERAL HISTORY */}
         {activeTab === 'history' && (

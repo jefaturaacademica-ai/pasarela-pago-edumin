@@ -1,7 +1,7 @@
 import React from 'react';
 import IzipayCheckoutModal from './IzipayCheckoutModal';
 
-export default function StudentCheckoutModal({ isOpen, onClose, linkData }) {
+export default function StudentCheckoutModal({ isOpen, onClose, linkData, onPaymentSuccess }) {
   if (!isOpen) return null;
 
   const activeAmount = linkData?.amount || 540;
@@ -31,7 +31,7 @@ export default function StudentCheckoutModal({ isOpen, onClose, linkData }) {
       onClose={onClose}
       amount={activeAmount}
       cartItems={cartItems}
-      onPaymentSuccess={() => {}}
+      onPaymentSuccess={onPaymentSuccess}
       isAdminLoggedIn={false}
       initialStudentData={initialStudentData}
     />

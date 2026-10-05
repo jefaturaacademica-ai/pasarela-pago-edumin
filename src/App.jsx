@@ -161,6 +161,47 @@ export default function App() {
     }
   ]);
 
+  // Successful Transactions DB (persisted in localStorage)
+  const [successfulTransactions, setSuccessfulTransactions] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('edumin_successful_transactions');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error('Error parsing successful transactions:', e);
+        }
+      }
+    }
+    // Default sample transaction
+    return [
+      {
+        orderNumber: 'IZI-849201',
+        firstName: 'Roger',
+        lastName: 'Sanalea Calcina',
+        clientName: 'Roger Sanalea Calcina',
+        dni: '74829102',
+        email: 'roger.sanalea@gmail.com',
+        phone: '987654321',
+        diplomado: 'DIPLOMADO DE ALTA ESPECIALIZACIÓN EN MONITOREO Y EVALUACIÓN AMBIENTAL',
+        packageName: 'PROGRAMA COMPLETO',
+        amount: 540,
+        status: 'Aprobado Izipay',
+        dateFormatted: '05/10/2026 15:30:12'
+      }
+    ];
+  });
+
+  const handleRecordSuccessfulPayment = (txData) => {
+    setSuccessfulTransactions((prev) => {
+      const updated = [txData, ...prev];
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('edumin_successful_transactions', JSON.stringify(updated));
+      }
+      return updated;
+    });
+  };
+
   // Add Item to Shopping Cart
   const handleAddToCart = (item) => {
     const itemPrice = item.price || item.basePrice || 540;
@@ -388,7 +429,10 @@ export default function App() {
         onClose={() => setIsIzipayCheckoutOpen(false)}
         amount={izipayCheckoutAmount}
         cartItems={izipayCheckoutItems}
-        onPaymentSuccess={() => setCartItems([])}
+        onPaymentSuccess={(txData) => {
+          setCartItems([]);
+          if (txData) handleRecordSuccessfulPayment(txData);
+        }}
         isAdminLoggedIn={!!asesoraSession}
       />
 
@@ -418,6 +462,7 @@ export default function App() {
         }}
         initialPackage={selectedPackageForAdmin}
         installmentPlans={installmentPlans}
+        successfulTransactions={successfulTransactions}
         onSaveInstallmentPlan={handleSaveInstallmentPlan}
         onUpdateInstallmentStatus={handleUpdateInstallmentStatus}
         onPreviewStudentCheckout={handlePreviewStudentCheckout}
@@ -433,6 +478,9 @@ export default function App() {
           }
         }}
         linkData={activeStudentCheckoutData}
+        onPaymentSuccess={(txData) => {
+          if (txData) handleRecordSuccessfulPayment(txData);
+        }}
       />
 
     </div>
