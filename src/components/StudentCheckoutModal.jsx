@@ -17,7 +17,9 @@ export default function StudentCheckoutModal({ isOpen, onClose, linkData }) {
     name: linkData?.clientName || '',
     email: linkData?.email || '',
     phone: linkData?.phone || '',
-    diplomado: linkData?.diplomado || ''
+    diplomado: linkData?.diplomado || '',
+    exp: linkData?.exp || '',
+    sig: linkData?.sig || ''
   };
 
   return (

@@ -15,7 +15,8 @@ import {
   Lock,
   ArrowRight,
   Edit2,
-  GraduationCap
+  GraduationCap,
+  Clock
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { createIzipayPaymentToken, loadIzipayScript, IZIPAY_CONFIG } from '../utils/izipayService';
@@ -401,20 +402,23 @@ export default function IzipayCheckoutModal({
               </div>
             </div>
 
-            <div className="pt-2 flex gap-3">
-              <button
-                onClick={() => alert('Descargando Boleta Electrónica PDF homologada por SUNAT...')}
-                className="flex-1 py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center space-x-2 border border-slate-300 cursor-pointer"
-              >
-                <Download className="w-4 h-4 text-slate-600" />
-                <span>Descargar Boleta PDF</span>
-              </button>
+            {/* 72-Hour Invoice & Receipt Notice */}
+            <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-left text-xs text-amber-950 space-y-1">
+              <div className="font-extrabold text-amber-900 flex items-center gap-1.5">
+                <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>Emisión de Comprobante Electrónico (SUNAT)</span>
+              </div>
+              <p className="text-[11px] text-slate-700 leading-relaxed font-sans">
+                Tu comprobante de pago (Boleta y/o Factura Electrónica) será enviado a tu correo registrado en un plazo máximo de <strong>72 horas</strong> en coordinación directa con el área de ventas y facturación de EDUMIN.
+              </p>
+            </div>
 
+            <div className="pt-1">
               <button
                 onClick={handleCloseModal}
-                className="flex-1 py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold uppercase tracking-wider cursor-pointer shadow-md"
+                className="w-full py-3.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black uppercase tracking-wider cursor-pointer shadow-md transition-all"
               >
-                <span>Finalizar</span>
+                <span>Finalizar y Salir</span>
               </button>
             </div>
           </div>
@@ -515,6 +519,14 @@ export default function IzipayCheckoutModal({
                       Requerido por Izipay
                     </span>
                   </div>
+
+                  {/* 24-HOUR EXPIRATION BANNER */}
+                  {initialStudentData?.exp && (
+                    <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900 font-bold flex items-center gap-1.5 shadow-xs">
+                      <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>⏱️ Enlace de pago con validez máxima de 24 horas por seguridad.</span>
+                    </div>
+                  )}
 
                   {/* READ-ONLY: PAQUETE ADQUIRIDO */}
                   <div className="space-y-1">

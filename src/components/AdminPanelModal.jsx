@@ -115,7 +115,10 @@ export default function AdminPanelModal({
     const isCuota = formData.payType === 'cuotas';
     const cuotaLabel = isCuota ? `Cuota 1 de ${formData.totalCuotas} - ${formData.packageName}` : `${formData.packageName} (Contado)`;
 
-    const sig = generatePaymentSignature(linkId, currentPayAmount, cuotaLabel);
+    // 24 Hours Expiration Timestamp
+    const expTimestamp = Date.now() + 24 * 60 * 60 * 1000;
+
+    const sig = generatePaymentSignature(linkId, currentPayAmount, cuotaLabel, expTimestamp);
 
     const query = new URLSearchParams({
       id: linkId,
@@ -125,6 +128,7 @@ export default function AdminPanelModal({
       dip: formData.diplomado,
       monto: currentPayAmount,
       pkg: cuotaLabel,
+      exp: expTimestamp,
       sig: sig
     }).toString();
 
@@ -171,7 +175,10 @@ export default function AdminPanelModal({
     const linkId = 'PAY-CUSTOM-' + Math.floor(100000 + Math.random() * 900000);
     const origin = window.location.origin;
 
-    const sig = generatePaymentSignature(linkId, customLinkData.customAmount, customLinkData.customConcept);
+    // 24 Hours Expiration Timestamp
+    const expTimestamp = Date.now() + 24 * 60 * 60 * 1000;
+
+    const sig = generatePaymentSignature(linkId, customLinkData.customAmount, customLinkData.customConcept, expTimestamp);
 
     const query = new URLSearchParams({
       id: linkId,
@@ -181,6 +188,7 @@ export default function AdminPanelModal({
       dip: customLinkData.diplomado,
       monto: customLinkData.customAmount,
       pkg: customLinkData.customConcept,
+      exp: expTimestamp,
       sig: sig
     }).toString();
 
@@ -229,7 +237,7 @@ export default function AdminPanelModal({
     const cleanPhone = target.phone.replace(/\D/g, '');
     const phoneWithCountry = cleanPhone.length === 9 ? `51${cleanPhone}` : cleanPhone;
     
-    let message = `Hola *${target.clientName}*, te saluda tu asesora de *EDUMIN* 🎓.\n\nAquí tienes tu enlace de pago para *${target.packageName}* por un monto de *S/ ${target.cuotaAmount}.00*:\n\n👉 ${target.currentLinkUrl}\n\nQuedo atenta para enviarte tu comprobante.`;
+    let message = `Hola *${target.clientName}*, te saluda tu asesora de *EDUMIN* 🎓.\n\nAquí tienes tu enlace de pago para *${target.packageName}* por un monto de *S/ ${target.cuotaAmount}.00*:\n\n👉 ${target.currentLinkUrl}\n\n⏱️ *Nota:* Este enlace es válido únicamente por *24 horas* por seguridad.\n\nQuedo atenta para confirmarte la matrícula.`;
 
     window.open(`https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(message)}`, '_blank');
   };
@@ -240,7 +248,10 @@ export default function AdminPanelModal({
     const origin = window.location.origin;
     const cuotaLabel = `Cuota ${nextCuotaNum} de ${plan.totalCuotas} - ${plan.packageName}`;
 
-    const sig = generatePaymentSignature(linkId, plan.cuotaAmount, cuotaLabel);
+    // 24 Hours Expiration Timestamp
+    const expTimestamp = Date.now() + 24 * 60 * 60 * 1000;
+
+    const sig = generatePaymentSignature(linkId, plan.cuotaAmount, cuotaLabel, expTimestamp);
 
     const query = new URLSearchParams({
       id: linkId,
@@ -249,6 +260,7 @@ export default function AdminPanelModal({
       email: plan.email,
       monto: plan.cuotaAmount,
       pkg: cuotaLabel,
+      exp: expTimestamp,
       sig: sig
     }).toString();
 

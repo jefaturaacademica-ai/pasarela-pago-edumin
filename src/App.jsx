@@ -211,17 +211,19 @@ export default function App() {
           const reqAmount = Number(params.get('monto')) || 540;
           const reqPkg = params.get('pkg') || 'PROGRAMA COMPLETO';
           const reqSig = params.get('sig') || '';
+          const reqExp = params.get('exp') || '';
 
-          // Validate link integrity against cryptographic signature & official package prices
+          // Validate link integrity against cryptographic signature, 24h expiration & official package prices
           const validation = validatePaymentIntegrity({
             orderId: reqId,
             amount: reqAmount,
             packageName: reqPkg,
-            sig: reqSig
+            sig: reqSig,
+            exp: reqExp
           });
 
           if (!validation.valid) {
-            alert(`⛔ ALERTA DE SEGURIDAD:\n\n${validation.error}\n\nPor favor solicita un nuevo enlace oficial a tu asesora educativa EDUMIN.`);
+            alert(`⛔ ALERTA DE SEGURIDAD / EXPIRACIÓN:\n\n${validation.error}`);
             window.location.hash = '';
             return;
           }
@@ -234,7 +236,8 @@ export default function App() {
             diplomado: params.get('dip') || params.get('diplomado') || '',
             amount: reqAmount,
             packageName: reqPkg,
-            sig: reqSig
+            sig: reqSig,
+            exp: reqExp
           };
           setActiveStudentCheckoutData(studentOrder);
           setIsStudentCheckoutOpen(true);
