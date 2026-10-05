@@ -14,7 +14,10 @@ export default function StudentCheckoutModal({ isOpen, onClose, linkData }) {
   }];
 
   const initialStudentData = {
+    firstName: linkData?.firstName || '',
+    lastName: linkData?.lastName || '',
     name: linkData?.clientName || '',
+    dni: linkData?.dni || '',
     email: linkData?.email || '',
     phone: linkData?.phone || '',
     diplomado: linkData?.diplomado || '',

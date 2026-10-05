@@ -780,7 +780,7 @@ export default function IzipayCheckoutModal({
                   <div className="text-center py-8 space-y-3">
                     <RefreshCw className="w-8 h-8 text-[#00a499] animate-spin mx-auto" />
                     <p className="text-xs font-bold text-slate-600">Generando sesión de pago segura con Izipay...</p>
-                    <p className="text-[11px] text-slate-400">Registrando comprador: {studentName}</p>
+                    <p className="text-[11px] text-slate-400">Registrando comprador: {studentFirstName} {studentLastName}</p>
                   </div>
                 ) : (
                   /* REAL EMBEDDED IZIPAY SMART FORM CONTAINER */
