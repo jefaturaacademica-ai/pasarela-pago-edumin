@@ -387,13 +387,14 @@ export default function App() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
             {packages.map((pkg) => (
-              <PackageCard
-                key={pkg.id}
-                packageData={pkg}
-                onAddToCart={handleAddToCart}
-                onDirectIzipayCheckout={handleDirectIzipayCheckout}
-                onOpenAdminPanel={handleOpenAdminPanel}
-              />
+              <div key={pkg.id} id={`package-${pkg.id}`} className="scroll-mt-28 flex flex-col">
+                <PackageCard
+                  packageData={pkg}
+                  onAddToCart={handleAddToCart}
+                  onDirectIzipayCheckout={handleDirectIzipayCheckout}
+                  onOpenAdminPanel={handleOpenAdminPanel}
+                />
+              </div>
             ))}
           </div>
         </div>
