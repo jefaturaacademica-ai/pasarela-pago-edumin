@@ -126,6 +126,7 @@ export default function App() {
             clientName: params.get('cliente') || '',
             phone: params.get('tel') || '',
             email: params.get('email') || '',
+            diplomado: params.get('dip') || params.get('diplomado') || '',
             amount: Number(params.get('monto')) || 540,
             packageName: params.get('pkg') || 'PROGRAMA COMPLETO',
             sig: params.get('sig') || ''
@@ -230,6 +231,7 @@ export default function App() {
             clientName: params.get('cliente') || '',
             phone: params.get('tel') || '',
             email: params.get('email') || '',
+            diplomado: params.get('dip') || params.get('diplomado') || '',
             amount: reqAmount,
             packageName: reqPkg,
             sig: reqSig

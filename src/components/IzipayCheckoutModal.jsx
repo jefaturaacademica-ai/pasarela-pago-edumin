@@ -14,10 +14,12 @@ import {
   Phone,
   Lock,
   ArrowRight,
-  Edit2
+  Edit2,
+  GraduationCap
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { createIzipayPaymentToken, loadIzipayScript, IZIPAY_CONFIG } from '../utils/izipayService';
+import { DIPLOMADOS_LIST } from '../utils/diplomadosData';
 
 export default function IzipayCheckoutModal({ 
   isOpen, 
@@ -35,6 +37,7 @@ export default function IzipayCheckoutModal({
   const [studentName, setStudentName] = useState('');
   const [studentEmail, setStudentEmail] = useState('');
   const [studentPhone, setStudentPhone] = useState('');
+  const [studentDiplomado, setStudentDiplomado] = useState('');
   const [formValidationError, setFormValidationError] = useState('');
 
   const [loadingToken, setLoadingToken] = useState(false);
@@ -89,8 +92,10 @@ export default function IzipayCheckoutModal({
           customer: {
             name: studentName.trim() || 'Alumno EDUMIN',
             email: studentEmail.trim() || 'alumno@edumin.pe',
-            phone: studentPhone.trim() || '987654321'
+            phone: studentPhone.trim() || '987654321',
+            diplomado: studentDiplomado.trim() || 'No especificado'
           },
+          diplomado: studentDiplomado.trim() || 'No especificado',
           packageName,
           mode: izipayMode,
           errorMessage: errorMsg,
@@ -107,6 +112,7 @@ export default function IzipayCheckoutModal({
     const message = `Hola Comercial EDUMIN 🎓, acabo de realizar mi pago con éxito en la pasarela Izipay.\n\n` +
       `📌 *Número de Pedido:* ${orderNumber}\n` +
       `👤 *Alumno:* ${studentName || 'Alumno'}\n` +
+      `🎓 *Diplomado:* ${studentDiplomado || 'No especificado'}\n` +
       `📧 *Correo:* ${studentEmail || 'Correo'}\n` +
       `📱 *Teléfono:* ${studentPhone || 'Teléfono'}\n` +
       `📚 *Programa:* ${packageName}\n` +
@@ -128,20 +134,23 @@ export default function IzipayCheckoutModal({
       let nameToSet = '';
       let emailToSet = '';
       let phoneToSet = '';
+      let diplomadoToSet = '';
 
       // Pre-fill student data if provided via props or localStorage
       if (initialStudentData) {
         if (initialStudentData.name) nameToSet = initialStudentData.name;
         if (initialStudentData.email) emailToSet = initialStudentData.email;
         if (initialStudentData.phone) phoneToSet = initialStudentData.phone;
+        if (initialStudentData.diplomado) diplomadoToSet = initialStudentData.diplomado;
       } else {
         const savedStudent = localStorage.getItem('edumin_last_student_info');
         if (savedStudent) {
           try {
             const parsed = JSON.parse(savedStudent);
             if (parsed.name) nameToSet = parsed.name;
-            if (parsed.email) nameToSet = parsed.email;
+            if (parsed.email) emailToSet = parsed.email;
             if (parsed.phone) phoneToSet = parsed.phone;
+            if (parsed.diplomado) diplomadoToSet = parsed.diplomado;
           } catch (e) {
             console.warn('Error reading saved student info:', e);
           }
@@ -151,9 +160,10 @@ export default function IzipayCheckoutModal({
       setStudentName(nameToSet);
       setStudentEmail(emailToSet);
       setStudentPhone(phoneToSet);
+      setStudentDiplomado(diplomadoToSet);
 
-      // If student info was prefilled by Admin, SKIP Step 1 and GO DIRECTLY to Izipay payment form!
-      if (nameToSet.trim() && emailToSet.trim() && phoneToSet.trim()) {
+      // If student info and diplomado were prefilled by Admin, SKIP Step 1 and GO DIRECTLY to Izipay payment form!
+      if (nameToSet.trim() && emailToSet.trim() && phoneToSet.trim() && diplomadoToSet.trim()) {
         setStep('payment');
       } else {
         setStep('info');
@@ -166,6 +176,10 @@ export default function IzipayCheckoutModal({
     if (e) e.preventDefault();
     setFormValidationError('');
 
+    if (!studentDiplomado.trim()) {
+      setFormValidationError('Por favor selecciona el Diplomado al que deseas inscribirte.');
+      return;
+    }
     if (!studentName.trim()) {
       setFormValidationError('Por favor ingresa tus Nombres y Apellidos completos.');
       return;
@@ -183,7 +197,8 @@ export default function IzipayCheckoutModal({
     localStorage.setItem('edumin_last_student_info', JSON.stringify({
       name: studentName.trim(),
       email: studentEmail.trim(),
-      phone: studentPhone.trim()
+      phone: studentPhone.trim(),
+      diplomado: studentDiplomado.trim()
     }));
 
     setStep('payment');
@@ -358,6 +373,12 @@ export default function IzipayCheckoutModal({
                 <span className="text-slate-500">Alumno Registrado:</span>
                 <span className="font-bold text-slate-900 font-sans">{studentName}</span>
               </div>
+              {studentDiplomado && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Diplomado Elegido:</span>
+                  <span className="font-bold text-[#00a499] font-sans text-right max-w-[60%]">{studentDiplomado}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-slate-500">Correo Electrónico:</span>
                 <span className="text-slate-800 font-sans">{studentEmail}</span>
@@ -514,7 +535,28 @@ export default function IzipayCheckoutModal({
                     </div>
                   </div>
 
-                  {/* FIELD 1: NOMBRES Y APELLIDOS */}
+                  {/* FIELD 1: DIPLOMADO SELECTION */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1">
+                      <GraduationCap className="w-3.5 h-3.5 text-[#00a499]" />
+                      Diplomado *
+                    </label>
+                    <select
+                      required
+                      value={studentDiplomado}
+                      onChange={(e) => setStudentDiplomado(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#00a499] focus:border-[#00a499] outline-none transition-all shadow-sm cursor-pointer"
+                    >
+                      <option value="" disabled>-- Selecciona tu Diplomado --</option>
+                      {DIPLOMADOS_LIST.map((dip, idx) => (
+                        <option key={idx} value={dip}>
+                          {dip}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* FIELD 2: NOMBRES Y APELLIDOS */}
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1">
                       <User className="w-3.5 h-3.5 text-slate-500" />
@@ -530,7 +572,7 @@ export default function IzipayCheckoutModal({
                     />
                   </div>
 
-                  {/* FIELD 2: CORREO ELECTRÓNICO */}
+                  {/* FIELD 3: CORREO ELECTRÓNICO */}
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1">
                       <Mail className="w-3.5 h-3.5 text-slate-500" />
@@ -546,7 +588,7 @@ export default function IzipayCheckoutModal({
                     />
                   </div>
 
-                  {/* FIELD 3: TELÉFONO / WHATSAPP */}
+                  {/* FIELD 4: TELÉFONO / WHATSAPP */}
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1">
                       <Phone className="w-3.5 h-3.5 text-slate-500" />
@@ -591,6 +633,11 @@ export default function IzipayCheckoutModal({
                     <span className="font-bold text-slate-900 block flex items-center gap-1">
                       <User className="w-3.5 h-3.5 text-[#00a499]" /> {studentName}
                     </span>
+                    {studentDiplomado && (
+                      <span className="text-[11px] font-bold text-[#00a499] block flex items-center gap-1">
+                        <GraduationCap className="w-3.5 h-3.5" /> {studentDiplomado}
+                      </span>
+                    )}
                     <span className="text-[11px] text-slate-500 block">
                       {studentEmail} • {studentPhone}
                     </span>

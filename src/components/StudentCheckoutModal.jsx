@@ -16,7 +16,8 @@ export default function StudentCheckoutModal({ isOpen, onClose, linkData }) {
   const initialStudentData = {
     name: linkData?.clientName || '',
     email: linkData?.email || '',
-    phone: linkData?.phone || ''
+    phone: linkData?.phone || '',
+    diplomado: linkData?.diplomado || ''
   };
 
   return (

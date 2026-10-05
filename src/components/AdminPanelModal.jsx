@@ -20,10 +20,12 @@ import {
   AlertCircle,
   FileCheck,
   Edit3,
-  ShieldCheck
+  ShieldCheck,
+  GraduationCap
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { generatePaymentSignature } from '../utils/securityUtils';
+import { DIPLOMADOS_LIST } from '../utils/diplomadosData';
 
 export default function AdminPanelModal({ 
   isOpen, 
@@ -41,6 +43,7 @@ export default function AdminPanelModal({
     clientName: '',
     phone: '',
     email: '',
+    diplomado: '',
     packageName: 'PROGRAMA COMPLETO',
     payType: 'cuotas', // 'contado' | 'cuotas'
     totalCuotas: 2,
@@ -53,6 +56,7 @@ export default function AdminPanelModal({
     clientName: '',
     phone: '',
     email: '',
+    diplomado: '',
     customAmount: 120,
     customConcept: 'Reserva de Vacante / Certificación Extra',
   });
@@ -118,6 +122,7 @@ export default function AdminPanelModal({
       cliente: formData.clientName,
       tel: formData.phone,
       email: formData.email,
+      dip: formData.diplomado,
       monto: currentPayAmount,
       pkg: cuotaLabel,
       sig: sig
@@ -136,6 +141,7 @@ export default function AdminPanelModal({
       clientName: formData.clientName,
       phone: formData.phone,
       email: formData.email,
+      diplomado: formData.diplomado,
       packageName: formData.packageName,
       payType: formData.payType,
       currentCuotaNum: 1,
@@ -172,6 +178,7 @@ export default function AdminPanelModal({
       cliente: customLinkData.clientName,
       tel: customLinkData.phone,
       email: customLinkData.email,
+      dip: customLinkData.diplomado,
       monto: customLinkData.customAmount,
       pkg: customLinkData.customConcept,
       sig: sig
@@ -185,6 +192,7 @@ export default function AdminPanelModal({
       clientName: customLinkData.clientName,
       phone: customLinkData.phone,
       email: customLinkData.email,
+      diplomado: customLinkData.diplomado,
       packageName: customLinkData.customConcept,
       payType: 'custom',
       currentCuotaNum: 1,
@@ -434,41 +442,62 @@ export default function AdminPanelModal({
             </div>
 
             {/* Client Info Fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="space-y-3">
               <div className="space-y-1">
-                <label className="font-bold text-slate-300">Nombre del Alumno:</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej. Carmen Prado"
-                  value={formData.clientName}
-                  onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-medium"
-                />
+                <label className="font-bold text-slate-300 flex items-center gap-1.5">
+                  <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Diplomado Asignado (Opcional):</span>
+                </label>
+                <select
+                  value={formData.diplomado}
+                  onChange={(e) => setFormData({ ...formData, diplomado: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs font-semibold focus:outline-none focus:border-amber-400 cursor-pointer"
+                >
+                  <option value="">-- El alumno lo seleccionará al pagar --</option>
+                  {DIPLOMADOS_LIST.map((dip, idx) => (
+                    <option key={idx} value={dip} className="bg-slate-900 text-white">
+                      {dip}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-300">WhatsApp:</label>
-                <input
-                  type="tel"
-                  required
-                  placeholder="987654321"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-mono"
-                />
-              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300">Nombre del Alumno:</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej. Carmen Prado"
+                    value={formData.clientName}
+                    onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-medium"
+                  />
+                </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-300">Correo:</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="carmen@gmail.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white"
-                />
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300">WhatsApp:</label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="987654321"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-mono"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300">Correo:</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="carmen@gmail.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white"
+                  />
+                </div>
               </div>
             </div>
 
@@ -525,41 +554,62 @@ export default function AdminPanelModal({
             </div>
 
             {/* Required Client Fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="space-y-3">
               <div className="space-y-1">
-                <label className="font-bold text-slate-300">1. Nombre del Cliente:</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej. Carlos Mendoza"
-                  value={customLinkData.clientName}
-                  onChange={(e) => setCustomLinkData({ ...customLinkData, clientName: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white"
-                />
+                <label className="font-bold text-slate-300 flex items-center gap-1.5">
+                  <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Diplomado Asignado (Opcional):</span>
+                </label>
+                <select
+                  value={customLinkData.diplomado}
+                  onChange={(e) => setCustomLinkData({ ...customLinkData, diplomado: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs font-semibold focus:outline-none focus:border-amber-400 cursor-pointer"
+                >
+                  <option value="">-- El alumno lo seleccionará al pagar --</option>
+                  {DIPLOMADOS_LIST.map((dip, idx) => (
+                    <option key={idx} value={dip} className="bg-slate-900 text-white">
+                      {dip}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-300">2. Número de WhatsApp:</label>
-                <input
-                  type="tel"
-                  required
-                  placeholder="987654321"
-                  value={customLinkData.phone}
-                  onChange={(e) => setCustomLinkData({ ...customLinkData, phone: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-mono"
-                />
-              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300">1. Nombre del Cliente:</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej. Carlos Mendoza"
+                    value={customLinkData.clientName}
+                    onChange={(e) => setCustomLinkData({ ...customLinkData, clientName: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white"
+                  />
+                </div>
 
-              <div className="space-y-1">
-                <label className="font-bold text-slate-300">3. Correo Electrónico:</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="carlos@gmail.com"
-                  value={customLinkData.email}
-                  onChange={(e) => setCustomLinkData({ ...customLinkData, email: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white"
-                />
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300">2. Número de WhatsApp:</label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="987654321"
+                    value={customLinkData.phone}
+                    onChange={(e) => setCustomLinkData({ ...customLinkData, phone: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-mono"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300">3. Correo Electrónico:</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="carlos@gmail.com"
+                    value={customLinkData.email}
+                    onChange={(e) => setCustomLinkData({ ...customLinkData, email: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white"
+                  />
+                </div>
               </div>
             </div>
 

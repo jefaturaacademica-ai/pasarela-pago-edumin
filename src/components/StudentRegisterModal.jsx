@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, School, User, Phone, Mail, DollarSign, Lock, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { X, School, User, Phone, Mail, DollarSign, Lock, ArrowRight, ShieldCheck, CheckCircle2, GraduationCap } from 'lucide-react';
+import { DIPLOMADOS_LIST } from '../utils/diplomadosData';
 
 export default function StudentRegisterModal({ 
   isOpen, 
@@ -11,11 +12,12 @@ export default function StudentRegisterModal({
     clientName: '',
     phone: '',
     email: '',
+    diplomado: '',
   });
 
   useEffect(() => {
     if (selectionData) {
-      setFormData({ clientName: '', phone: '', email: '' });
+      setFormData({ clientName: '', phone: '', email: '', diplomado: '' });
     }
   }, [selectionData]);
 
@@ -37,6 +39,7 @@ export default function StudentRegisterModal({
       clientName: formData.clientName,
       phone: formData.phone,
       email: formData.email,
+      diplomado: formData.diplomado,
       packageName: conceptName,
       amount: payableAmount,
       payType: payType,
@@ -89,6 +92,26 @@ export default function StudentRegisterModal({
 
         {/* Student Data Form */}
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          <div className="space-y-1">
+            <label className="font-bold text-slate-200 flex items-center space-x-1.5">
+              <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
+              <span>Diplomado a Inscribirse *:</span>
+            </label>
+            <select
+              required
+              value={formData.diplomado}
+              onChange={(e) => setFormData({ ...formData, diplomado: e.target.value })}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-medium focus:outline-none focus:border-amber-400 cursor-pointer"
+            >
+              <option value="" disabled>-- Selecciona tu Diplomado --</option>
+              {DIPLOMADOS_LIST.map((dip, idx) => (
+                <option key={idx} value={dip} className="bg-slate-900 text-white">
+                  {dip}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="space-y-1">
             <label className="font-bold text-slate-200 flex items-center space-x-1.5">
               <User className="w-3.5 h-3.5 text-amber-400" />
