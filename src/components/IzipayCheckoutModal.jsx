@@ -56,6 +56,7 @@ export default function IzipayCheckoutModal({
   const [formValidationError, setFormValidationError] = useState('');
 
   const [loadingToken, setLoadingToken] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paid, setPaid] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   
@@ -159,6 +160,7 @@ export default function IzipayCheckoutModal({
     if (isOpen) {
       setOrderNumber('171866' + Math.floor(1000 + Math.random() * 9000));
       setPaid(false);
+      setIsProcessingPayment(false);
       setErrorMessage(null);
       setFormToken(null);
       setCustomAmount(null);
@@ -318,6 +320,7 @@ export default function IzipayCheckoutModal({
             // Listen to real transaction submit & error events
             window.KR.onSubmit((paymentData) => {
               console.log('Transacción Izipay Real Exitosa:', paymentData);
+              setIsProcessingPayment(false);
               setPaid(true);
               
               // Notify n8n Webhook
@@ -351,6 +354,7 @@ export default function IzipayCheckoutModal({
 
             window.KR.onError((error) => {
               console.error('Error de pago en Izipay SDK:', error);
+              setIsProcessingPayment(false);
               const errTxt = error.errorMessage || 'Transacción rechazada por el banco emisor.';
               setErrorMessage(errTxt);
 
@@ -381,10 +385,32 @@ export default function IzipayCheckoutModal({
     };
   }, [isOpen, step, orderNumber, izipayMode, activeAmount]);
 
+  // Listen to payment button click / form submission to show real-time processing feedback
+  useEffect(() => {
+    if (!formToken || !krContainerRef.current) return;
+
+    const handlePaymentClickOrSubmit = (e) => {
+      const target = e.target;
+      if (target && (target.closest('.kr-payment-button') || target.closest('button') || target.closest('form'))) {
+        setIsProcessingPayment(true);
+      }
+    };
+
+    const container = krContainerRef.current;
+    container.addEventListener('click', handlePaymentClickOrSubmit, true);
+    container.addEventListener('submit', handlePaymentClickOrSubmit, true);
+
+    return () => {
+      container.removeEventListener('click', handlePaymentClickOrSubmit, true);
+      container.removeEventListener('submit', handlePaymentClickOrSubmit, true);
+    };
+  }, [formToken]);
+
   if (!isOpen) return null;
 
   const handleCloseModal = () => {
     setPaid(false);
+    setIsProcessingPayment(false);
     setErrorMessage(null);
     setStep('info');
     onClose();
@@ -396,6 +422,30 @@ export default function IzipayCheckoutModal({
       {/* Official Izipay Modal Container (Light clean card) */}
       <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl p-6 sm:p-7 text-slate-800 overflow-hidden max-h-[92vh] overflow-y-auto border border-slate-200">
         
+        {/* REAL-TIME PROCESSING OVERLAY DURING BANK VERIFICATION */}
+        {isProcessingPayment && (
+          <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-md rounded-2xl flex flex-col items-center justify-center p-6 text-center space-y-4 animate-fadeIn">
+            <div className="relative w-16 h-16 mx-auto">
+              <div className="w-16 h-16 rounded-full border-4 border-slate-200 border-t-[#00a499] animate-spin"></div>
+              <Clock className="w-7 h-7 text-[#00a499] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+            </div>
+
+            <div className="space-y-1.5 max-w-xs mx-auto">
+              <h4 className="text-base font-black text-slate-900 leading-snug">
+                Transacción en proceso, espera un momento porfavor...
+              </h4>
+              <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                Estamos procesando tu pago de forma segura con el banco emisor e Izipay Perú. No cierres esta ventana.
+              </p>
+            </div>
+
+            <div className="px-3.5 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span>Procesamiento SSL 256-bit En Vivo</span>
+            </div>
+          </div>
+        )}
+
         {/* Top Right Close Circle Button */}
         <button
           onClick={handleCloseModal}
@@ -792,10 +842,24 @@ export default function IzipayCheckoutModal({
 
                 {/* Loading Spinner during Token Generation */}
                 {loadingToken ? (
-                  <div className="text-center py-8 space-y-3">
-                    <RefreshCw className="w-8 h-8 text-[#00a499] animate-spin mx-auto" />
-                    <p className="text-xs font-bold text-slate-600">Generando sesión de pago segura con Izipay...</p>
-                    <p className="text-[11px] text-slate-400">Registrando comprador: {studentFirstName} {studentLastName}</p>
+                  <div className="text-center py-10 space-y-4 bg-slate-50 border border-slate-200 rounded-2xl p-6 shadow-sm animate-fadeIn">
+                    <div className="relative w-14 h-14 mx-auto">
+                      <RefreshCw className="w-14 h-14 text-[#00a499] animate-spin" />
+                      <Clock className="w-6 h-6 text-[#00a499] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                    </div>
+                    <div className="space-y-1.5 max-w-xs mx-auto">
+                      <p className="text-base font-black text-slate-900 leading-tight">
+                        Transacción en proceso, espera un momento porfavor...
+                      </p>
+                      <p className="text-xs text-slate-500 font-medium">
+                        Generando sesión de pago segura con Izipay Perú...
+                      </p>
+                    </div>
+                    <div className="pt-1">
+                      <span className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[11px] font-bold inline-flex items-center gap-1.5 shadow-xs">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Registrando alumno: {studentFirstName} {studentLastName}
+                      </span>
+                    </div>
                   </div>
                 ) : (
                   /* REAL EMBEDDED IZIPAY SMART FORM CONTAINER */
