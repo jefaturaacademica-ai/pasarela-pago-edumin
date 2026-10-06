@@ -13,6 +13,8 @@ import FloatingWhatsapp from './components/FloatingWhatsapp';
 import Footer from './components/Footer';
 import StickyMobileBar from './components/StickyMobileBar';
 import SocialProofToast from './components/SocialProofToast';
+import DiplomadosCatalogModal from './components/DiplomadosCatalogModal';
+import CursosCatalogModal from './components/CursosCatalogModal';
 
 import { validatePaymentIntegrity } from './utils/securityUtils';
 
@@ -133,6 +135,18 @@ export default function App() {
 
   // Modals & App State
   const [isAsesoraLoginOpen, setIsAsesoraLoginOpen] = useState(false);
+  const [isDiplomadosCatalogOpen, setIsDiplomadosCatalogOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.location.hash.includes('diplomados');
+    }
+    return false;
+  });
+  const [isCursosCatalogOpen, setIsCursosCatalogOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.location.hash.includes('cursos');
+    }
+    return false;
+  });
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(() => {
     if (typeof window !== 'undefined') {
       const h = window.location.hash || '';
@@ -284,6 +298,16 @@ export default function App() {
     const checkHashOrder = () => {
       const hash = window.location.hash || '';
       
+      if (hash.includes('diplomados')) {
+        setIsDiplomadosCatalogOpen(true);
+        return;
+      }
+
+      if (hash.includes('cursos')) {
+        setIsCursosCatalogOpen(true);
+        return;
+      }
+
       if (hash.includes('admin') || hash.includes('asesora')) {
         setSelectedPackageForAdmin(OFFICIAL_PACKAGES[0]);
         setIsAdminPanelOpen(true);
@@ -430,6 +454,8 @@ export default function App() {
         onAsesoraLogout={handleAsesoraLogout}
         cartCount={cartItems.length}
         onOpenCart={() => setIsCartOpen(true)}
+        onOpenDiplomadosCatalog={() => setIsDiplomadosCatalogOpen(true)}
+        onOpenCursosCatalog={() => setIsCursosCatalogOpen(true)}
       />
 
       {/* Main Header Banner */}
@@ -585,6 +611,41 @@ export default function App() {
         linkData={activeStudentCheckoutData}
         onPaymentSuccess={(txData) => {
           if (txData) handleRecordSuccessfulPayment(txData);
+        }}
+      />
+
+      {/* Interactive 22 DAEM Diplomados Catalog Modal (#diplomados) */}
+      <DiplomadosCatalogModal
+        isOpen={isDiplomadosCatalogOpen}
+        onClose={() => {
+          setIsDiplomadosCatalogOpen(false);
+          if (window.location.hash.includes('diplomados')) {
+            window.location.hash = '';
+          }
+        }}
+        onSelectDiplomadoForCheckout={(diplomadoTitle) => {
+          setStudentSelectionData({
+            pkg: OFFICIAL_PACKAGES[0],
+            payType: 'contado',
+            cuotaOpt: null,
+            preselectedDiplomado: diplomadoTitle
+          });
+          setIsStudentRegisterOpen(true);
+        }}
+      />
+
+      {/* Interactive Curso IA Catalog Modal (#cursos) */}
+      <CursosCatalogModal
+        isOpen={isCursosCatalogOpen}
+        onClose={() => {
+          setIsCursosCatalogOpen(false);
+          if (window.location.hash.includes('cursos')) {
+            window.location.hash = '';
+          }
+        }}
+        onSelectCursoForCheckout={() => {
+          const cursoPkg = OFFICIAL_PACKAGES.find(p => p.id === 'curso_ia') || OFFICIAL_PACKAGES[0];
+          handleDirectIzipayCheckout(cursoPkg);
         }}
       />
 

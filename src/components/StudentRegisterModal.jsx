@@ -17,7 +17,12 @@ export default function StudentRegisterModal({
 
   useEffect(() => {
     if (selectionData) {
-      setFormData({ clientName: '', phone: '', email: '', diplomado: '' });
+      setFormData({ 
+        clientName: '', 
+        phone: '', 
+        email: '', 
+        diplomado: selectionData.preselectedDiplomado || '' 
+      });
     }
   }, [selectionData]);
 

@@ -7,7 +7,9 @@ export default function Navbar({
   isAsesoraLoggedIn,
   onAsesoraLogout,
   cartCount,
-  onOpenCart
+  onOpenCart,
+  onOpenDiplomadosCatalog,
+  onOpenCursosCatalog
 }) {
   const logoUrl = "https://raw.githubusercontent.com/videoconferenciasdiplomado-alt/imagenes/main/logo/logo%20blanco.png";
 
@@ -36,9 +38,23 @@ export default function Navbar({
           </a>
 
           {/* Navigation Links */}
-          <div className="hidden md:flex items-center space-x-6 text-xs font-semibold text-slate-300">
+          <div className="hidden md:flex items-center space-x-4 text-xs font-semibold text-slate-300">
             <a href="#" className="hover:text-white transition-colors">Inicio</a>
-            <a href="#cursos" className="text-white font-bold bg-slate-800/80 px-3 py-1 rounded-full border border-slate-700">Cursos & Especializaciones</a>
+            
+            <button 
+              onClick={onOpenDiplomadosCatalog}
+              className="text-emerald-400 font-extrabold bg-emerald-950/60 hover:bg-emerald-900/80 px-3 py-1.5 rounded-full border border-emerald-500/40 cursor-pointer transition-all flex items-center gap-1"
+            >
+              <span>🎓 Diplomados DAEM (22)</span>
+            </button>
+
+            <button 
+              onClick={onOpenCursosCatalog}
+              className="text-purple-300 font-extrabold bg-purple-950/60 hover:bg-purple-900/80 px-3 py-1.5 rounded-full border border-purple-500/40 cursor-pointer transition-all flex items-center gap-1"
+            >
+              <span>⚡ Curso IA (S/ 149)</span>
+            </button>
+
             <a href="#metodologia" className="hover:text-white transition-colors">Metodología</a>
             <a href="#certificacion" className="hover:text-white transition-colors">Certificación</a>
           </div>
