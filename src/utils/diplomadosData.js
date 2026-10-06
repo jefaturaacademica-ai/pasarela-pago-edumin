@@ -1,3 +1,17 @@
+export const DIPLOMADOS_CATEGORIES = {
+  LEGAL: "Legal y Cumplimiento",
+  SEGURIDAD: "Seguridad y Cumplimiento",
+  IA: "Datos e Inteligencia Artificial",
+  OPERACIONES: "Operaciones y Productividad",
+  LOGISTICA: "Logística y Abastecimiento",
+  AMBIENTE: "Ambiente y Sostenibilidad",
+  SOCIAL: "Gestión Social",
+  GEOLOGIA: "Geología y Geotecnia",
+  DIRECCION: "Dirección Minera",
+  PROCESAMIENTO: "Procesamiento de Minerales",
+  CURSOS: "Cursos Especializados"
+};
+
 export const DIPLOMADOS_LIST = [
   "CURSO DE IA DE 0 A 100",
   "DERECHO MINERO",
