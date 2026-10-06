@@ -6,6 +6,22 @@ export default function HeaderBanner({ onOpenAdminPanel, onSelectCategory }) {
   const [isHovered, setIsHovered] = useState(false);
   const containerRef = useRef(null);
 
+  // Countdown timer for urgency (14 min 59 sec = 899s)
+  const [timeLeft, setTimeLeft] = useState(899);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => (prev <= 1 ? 899 : prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTime = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
   const handleCuotasWhatsApp = () => {
     const message = `Hola asesora EDUMIN 🎓, deseo consultar sobre los Programas de Especialización y solicitar las facilidades de pago en cuotas.`;
     window.open(`https://wa.me/51951101765?text=${encodeURIComponent(message)}`, '_blank');
@@ -114,7 +130,7 @@ export default function HeaderBanner({ onOpenAdminPanel, onSelectCategory }) {
   });
 
   return (
-    <header className="pt-28 pb-10 px-4 sm:px-6 lg:px-8 text-center text-white bg-gradient-to-b from-[#0f172a] via-[#1e293b] to-[#0f172a] border-b border-slate-800 relative overflow-hidden font-['Plus_Jakarta_Sans',sans-serif]">
+    <header id="catalogo-programas" className="pt-28 pb-10 px-4 sm:px-6 lg:px-8 text-center text-white bg-gradient-to-b from-[#0f172a] via-[#1e293b] to-[#0f172a] border-b border-slate-800 relative overflow-hidden font-['Plus_Jakarta_Sans',sans-serif]">
       
       {/* Glow background effects */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[750px] h-[260px] bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -130,9 +146,18 @@ export default function HeaderBanner({ onOpenAdminPanel, onSelectCategory }) {
           </span>
         </h1>
 
-        {/* Subtitle Pill Badge */}
-        <div className="inline-block px-5 py-2 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 text-xs sm:text-sm font-extrabold tracking-wide uppercase shadow-lg">
-          TODOS ESTOS PROGRAMAS ESTÁN SUBVENCIONADOS POR RECCIP LATINOAMÉRICA AL 70%
+        {/* Subtitle Pill Badge with Live Countdown Timer */}
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <div className="inline-block px-5 py-2 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 text-xs sm:text-sm font-extrabold tracking-wide uppercase shadow-lg">
+            TODOS ESTOS PROGRAMAS ESTÁN SUBVENCIONADOS POR RECCIP LATINOAMÉRICA AL 70%
+          </div>
+
+          <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-rose-500/15 border border-rose-500/40 text-rose-400 text-xs font-black tracking-wider uppercase shadow-lg animate-pulse">
+            <span>⏱️ OFERTA VENCE EN:</span>
+            <span className="font-mono text-white font-black bg-rose-950/80 px-2 py-0.5 rounded border border-rose-500/50">
+              {formatTime(timeLeft)}
+            </span>
+          </div>
         </div>
 
         {/* Informative Installment Banner */}

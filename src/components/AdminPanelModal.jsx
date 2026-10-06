@@ -10,7 +10,10 @@ import {
   ExternalLink,
   History,
   ShieldCheck,
-  GraduationCap
+  GraduationCap,
+  FileSpreadsheet,
+  Download,
+  Search
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { generatePaymentSignature } from '../utils/securityUtils';
@@ -28,6 +31,20 @@ export default function AdminPanelModal({
 }) {
   const [activeTab, setActiveTab] = useState('custom_link'); // 'custom_link' | 'payments' | 'history'
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Helper to export data rows to CSV file
+  const handleExportCSV = (filename, headers, rows) => {
+    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
+      + [headers.join(','), ...rows.map(e => e.map(val => `"${(val || '').toString().replace(/"/g, '""')}"`).join(','))].join('\n');
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `${filename}_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
   
   // Custom Link State (Monto y Concepto libre/seleccionable con DNI y Nombres/Apellidos)
   const [customLinkData, setCustomLinkData] = useState({
@@ -463,15 +480,41 @@ export default function AdminPanelModal({
               </div>
             </div>
 
-            {/* Search Filter Input */}
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="🔍 Buscar por Alumno, DNI, N° de Orden o Concepto..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-amber-400"
-              />
+            {/* Search Filter Input & Export Button */}
+            <div className="flex flex-col sm:flex-row items-center gap-2">
+              <div className="relative flex-1 w-full">
+                <input
+                  type="text"
+                  placeholder="🔍 Buscar por Alumno, DNI, N° de Orden o Concepto..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white placeholder-slate-500 text-xs focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const headers = ['N Orden', 'Alumno', 'DNI', 'Email', 'Telefono', 'Diplomado', 'Programa', 'Monto (S/)', 'Estado', 'Fecha'];
+                  const rows = safeTransactions.map(tx => [
+                    tx.orderNumber || '',
+                    tx.clientName || `${tx.firstName || ''} ${tx.lastName || ''}`.trim(),
+                    tx.dni || '',
+                    tx.email || '',
+                    tx.phone || '',
+                    tx.diplomado || '',
+                    tx.packageName || '',
+                    tx.amount || 540,
+                    tx.status || 'Aprobado Izipay',
+                    tx.dateFormatted || tx.createdDate || ''
+                  ]);
+                  handleExportCSV('Reporte_Transacciones_EDUMIN', headers, rows);
+                }}
+                className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl flex items-center justify-center space-x-1.5 transition-all cursor-pointer shrink-0 shadow-md"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                <span>Exportar Excel / CSV</span>
+              </button>
             </div>
 
             {/* List of Payments */}

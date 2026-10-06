@@ -11,6 +11,8 @@ import StudentRegisterModal from './components/StudentRegisterModal';
 import StudentCheckoutModal from './components/StudentCheckoutModal';
 import FloatingWhatsapp from './components/FloatingWhatsapp';
 import Footer from './components/Footer';
+import StickyMobileBar from './components/StickyMobileBar';
+import SocialProofToast from './components/SocialProofToast';
 
 import { validatePaymentIntegrity } from './utils/securityUtils';
 
@@ -509,6 +511,12 @@ export default function App() {
 
       {/* Floating WhatsApp Button */}
       <FloatingWhatsapp />
+
+      {/* Real-Time Social Proof Sales Toast */}
+      <SocialProofToast />
+
+      {/* Mobile Sticky Quick Action Bar */}
+      <StickyMobileBar onOpenDirectCheckout={() => handleDirectIzipayCheckout(packages[0])} />
 
       {/* Shopping Cart Drawer */}
       <CartDrawer
