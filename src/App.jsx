@@ -139,27 +139,33 @@ export default function App() {
   const [selectedPackageForAdmin, setSelectedPackageForAdmin] = useState(packages[0]);
   const [studentSelectionData, setStudentSelectionData] = useState(null);
   const [activeStudentCheckoutData, setActiveStudentCheckoutData] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const h = window.location.hash || '';
-      if (h.includes('checkout') && h.includes('?')) {
-        const queryStr = h.split('?')[1];
-        const params = new URLSearchParams(queryStr);
-        if (params.get('cliente') || params.get('nom') || params.get('monto')) {
-          return {
-            id: params.get('id') || 'PAGO-CUSTOM',
-            firstName: params.get('nom') || '',
-            lastName: params.get('ape') || '',
-            clientName: params.get('cliente') || '',
-            dni: params.get('dni') || '',
-            phone: params.get('tel') || '',
-            email: params.get('email') || '',
-            diplomado: params.get('dip') || params.get('diplomado') || '',
-            amount: Number(params.get('monto')) || 540,
-            packageName: params.get('pkg') || 'PROGRAMA COMPLETO',
-            sig: params.get('sig') || '',
-            exp: params.get('exp') || ''
-          };
+    if (typeof window !== 'undefined' && window.location && window.location.hash) {
+      try {
+        const h = window.location.hash || '';
+        if (h.includes('checkout') && h.includes('?')) {
+          const queryStr = h.split('?')[1];
+          if (queryStr) {
+            const params = new URLSearchParams(queryStr);
+            if (params.get('cliente') || params.get('nom') || params.get('monto')) {
+              return {
+                id: params.get('id') || 'PAGO-CUSTOM',
+                firstName: params.get('nom') || '',
+                lastName: params.get('ape') || '',
+                clientName: params.get('cliente') || '',
+                dni: params.get('dni') || '',
+                phone: params.get('tel') || '',
+                email: params.get('email') || '',
+                diplomado: params.get('dip') || params.get('diplomado') || '',
+                amount: Number(params.get('monto')) || 540,
+                packageName: params.get('pkg') || 'PROGRAMA COMPLETO',
+                sig: params.get('sig') || '',
+                exp: params.get('exp') || ''
+              };
+            }
+          }
         }
+      } catch (e) {
+        console.warn('Error processing initial location hash:', e);
       }
     }
     return null;
