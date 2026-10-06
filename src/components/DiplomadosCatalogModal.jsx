@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Search, GraduationCap, ArrowRight, ShieldCheck, Sparkles, BookOpen, CheckCircle2 } from 'lucide-react';
 import { DAEM_FULL_CATALOG } from '../utils/daemCatalogData';
+import { textMatches } from '../utils/stringUtils';
 
 export default function DiplomadosCatalogModal({ isOpen, onClose, onSelectDiplomadoForCheckout }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -12,9 +13,11 @@ export default function DiplomadosCatalogModal({ isOpen, onClose, onSelectDiplom
 
   const filteredDiplomados = DAEM_FULL_CATALOG.filter(item => {
     const matchesSearch = !searchTerm || (
-      item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.objetivo.toLowerCase().includes(searchTerm.toLowerCase())
+      textMatches(item.title, searchTerm) ||
+      textMatches(item.category, searchTerm) ||
+      textMatches(item.objetivo, searchTerm) ||
+      textMatches(item.aprenderas, searchTerm) ||
+      textMatches(item.dirigido, searchTerm)
     );
     const matchesCategory = selectedCategory === 'ALL' || item.category === selectedCategory;
     return matchesSearch && matchesCategory;

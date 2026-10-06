@@ -18,6 +18,7 @@ import {
 import confetti from 'canvas-confetti';
 import { generatePaymentSignature } from '../utils/securityUtils';
 import { DIPLOMADOS_LIST } from '../utils/diplomadosData';
+import { textMatches } from '../utils/stringUtils';
 
 export default function AdminPanelModal({ 
   isOpen, 
@@ -522,14 +523,14 @@ export default function AdminPanelModal({
               {safeTransactions
                 .filter(t => {
                   if (!searchTerm) return true;
-                  const search = searchTerm.toLowerCase();
                   return (
-                    (t.clientName && t.clientName.toLowerCase().includes(search)) ||
-                    (t.firstName && t.firstName.toLowerCase().includes(search)) ||
-                    (t.lastName && t.lastName.toLowerCase().includes(search)) ||
-                    (t.dni && t.dni.toLowerCase().includes(search)) ||
-                    (t.orderNumber && t.orderNumber.toLowerCase().includes(search)) ||
-                    (t.packageName && t.packageName.toLowerCase().includes(search))
+                    textMatches(t.clientName, searchTerm) ||
+                    textMatches(t.firstName, searchTerm) ||
+                    textMatches(t.lastName, searchTerm) ||
+                    textMatches(t.dni, searchTerm) ||
+                    textMatches(t.orderNumber, searchTerm) ||
+                    textMatches(t.packageName, searchTerm) ||
+                    textMatches(t.diplomado, searchTerm)
                   );
                 })
                 .map((tx, idx) => (

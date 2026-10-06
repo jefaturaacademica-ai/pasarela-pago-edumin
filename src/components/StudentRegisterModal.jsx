@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, School, User, Phone, Mail, DollarSign, Lock, ArrowRight, ShieldCheck, CheckCircle2, GraduationCap } from 'lucide-react';
 import { DIPLOMADOS_LIST } from '../utils/diplomadosData';
+import { normalizeText } from '../utils/stringUtils';
 
 export default function StudentRegisterModal({ 
   isOpen, 
@@ -17,11 +18,21 @@ export default function StudentRegisterModal({
 
   useEffect(() => {
     if (selectionData) {
+      let matchedDiplomado = '';
+      if (selectionData.preselectedDiplomado) {
+        const normTarget = normalizeText(selectionData.preselectedDiplomado);
+        const found = DIPLOMADOS_LIST.find(d => {
+          const normD = normalizeText(d);
+          return normD === normTarget || normD.includes(normTarget) || normTarget.includes(normD);
+        });
+        matchedDiplomado = found || selectionData.preselectedDiplomado;
+      }
+
       setFormData({ 
         clientName: '', 
         phone: '', 
         email: '', 
-        diplomado: selectionData.preselectedDiplomado || '' 
+        diplomado: matchedDiplomado 
       });
     }
   }, [selectionData]);
