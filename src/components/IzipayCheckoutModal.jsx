@@ -22,6 +22,8 @@ import {
 import confetti from 'canvas-confetti';
 import { createIzipayPaymentToken, loadIzipayScript, IZIPAY_CONFIG } from '../utils/izipayService';
 import { DIPLOMADOS_LIST } from '../utils/diplomadosData';
+import { printPaymentVoucher } from '../utils/voucherUtils';
+import { lookupDNI } from '../utils/dniUtils';
 
 function splitName(fullNameStr = '') {
   const parts = fullNameStr.trim().split(/\s+/).filter(Boolean);
@@ -87,6 +89,35 @@ export default function IzipayCheckoutModal({
   const [studentPhone, setStudentPhone] = useState('');
   const [studentDiplomado, setStudentDiplomado] = useState('');
   const [formValidationError, setFormValidationError] = useState('');
+
+  // Invoice type: 'boleta' | 'factura'
+  const [invoiceType, setInvoiceType] = useState('boleta');
+  const [rucNumber, setRucNumber] = useState('');
+  const [razonSocial, setRazonSocial] = useState('');
+  const [dniLookupLoading, setDniLookupLoading] = useState(false);
+  const [dniLookupMsg, setDniLookupMsg] = useState('');
+
+  const handleVerifyDNI = async () => {
+    if (!studentDni || studentDni.trim().length !== 8) {
+      setDniLookupMsg('⚠️ El DNI debe tener 8 dígitos.');
+      return;
+    }
+    setDniLookupLoading(true);
+    setDniLookupMsg('🔍 Consultado DNI...');
+    const res = await lookupDNI(studentDni);
+    setDniLookupLoading(false);
+    if (res.success) {
+      if (res.firstName && res.lastName) {
+        setStudentFirstName(res.firstName);
+        setStudentLastName(res.lastName);
+        setDniLookupMsg(`✓ DNI verificado: ${res.fullName}`);
+      } else {
+        setDniLookupMsg('✓ DNI verificado para emisión SUNAT');
+      }
+    } else {
+      setDniLookupMsg(res.error || 'Error al validar DNI');
+    }
+  };
 
   const [loadingToken, setLoadingToken] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -520,6 +551,25 @@ export default function IzipayCheckoutModal({
                 />
                 <span>Confirmar por WhatsApp (+51 951 101 765)</span>
               </a>
+
+              <button
+                type="button"
+                onClick={() => printPaymentVoucher({
+                  orderNumber,
+                  amount: activeAmount,
+                  clientName: `${studentFirstName} ${studentLastName}`.trim(),
+                  dni: studentDni,
+                  diplomado: studentDiplomado,
+                  packageName,
+                  invoiceType,
+                  ruc: rucNumber,
+                  dateFormatted: new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' })
+                })}
+                className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer border border-slate-700"
+              >
+                <Download className="w-4 h-4 text-amber-400" />
+                <span>Descargar Voucher PDF / Imprimir</span>
+              </button>
             </div>
 
             {/* Receipt Box */}

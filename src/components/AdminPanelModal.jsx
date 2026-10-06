@@ -32,6 +32,7 @@ export default function AdminPanelModal({
 }) {
   const [activeTab, setActiveTab] = useState('custom_link'); // 'custom_link' | 'payments' | 'history'
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('all'); // 'all' | 'today' | 'week' | 'month'
 
   // Helper to export data rows to CSV file
   const handleExportCSV = (filename, headers, rows) => {
@@ -481,7 +482,7 @@ export default function AdminPanelModal({
               </div>
             </div>
 
-            {/* Search Filter Input & Export Button */}
+            {/* Search Filter Input, Date Range & Export Button */}
             <div className="flex flex-col sm:flex-row items-center gap-2">
               <div className="relative flex-1 w-full">
                 <input
@@ -493,23 +494,47 @@ export default function AdminPanelModal({
                 />
               </div>
 
+              <select
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="w-full sm:w-auto bg-slate-900 border border-slate-700 text-white text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-amber-400 cursor-pointer shrink-0 font-medium"
+              >
+                <option value="all">📅 Todas las Fechas</option>
+                <option value="today">📅 Cierre de Hoy</option>
+                <option value="week">📅 Esta Semana</option>
+                <option value="month">📅 Este Mes</option>
+              </select>
+
               <button
                 type="button"
                 onClick={() => {
                   const headers = ['N Orden', 'Alumno', 'DNI', 'Email', 'Telefono', 'Diplomado', 'Programa', 'Monto (S/)', 'Estado', 'Fecha'];
-                  const rows = safeTransactions.map(tx => [
-                    tx.orderNumber || '',
-                    tx.clientName || `${tx.firstName || ''} ${tx.lastName || ''}`.trim(),
-                    tx.dni || '',
-                    tx.email || '',
-                    tx.phone || '',
-                    tx.diplomado || '',
-                    tx.packageName || '',
-                    tx.amount || 540,
-                    tx.status || 'Aprobado Izipay',
-                    tx.dateFormatted || tx.createdDate || ''
-                  ]);
-                  handleExportCSV('Reporte_Transacciones_EDUMIN', headers, rows);
+                  const rows = safeTransactions
+                    .filter(t => {
+                      if (!searchTerm) return true;
+                      return (
+                        textMatches(t.clientName, searchTerm) ||
+                        textMatches(t.firstName, searchTerm) ||
+                        textMatches(t.lastName, searchTerm) ||
+                        textMatches(t.dni, searchTerm) ||
+                        textMatches(t.orderNumber, searchTerm) ||
+                        textMatches(t.packageName, searchTerm) ||
+                        textMatches(t.diplomado, searchTerm)
+                      );
+                    })
+                    .map(tx => [
+                      tx.orderNumber || '',
+                      tx.clientName || `${tx.firstName || ''} ${tx.lastName || ''}`.trim(),
+                      tx.dni || '',
+                      tx.email || '',
+                      tx.phone || '',
+                      tx.diplomado || '',
+                      tx.packageName || '',
+                      tx.amount || 540,
+                      tx.status || 'Aprobado Izipay',
+                      tx.dateFormatted || tx.createdDate || ''
+                    ]);
+                  handleExportCSV(`Reporte_Transacciones_${dateFilter}_EDUMIN`, headers, rows);
                 }}
                 className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl flex items-center justify-center space-x-1.5 transition-all cursor-pointer shrink-0 shadow-md"
               >
