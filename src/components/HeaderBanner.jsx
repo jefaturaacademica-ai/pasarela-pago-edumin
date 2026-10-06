@@ -24,20 +24,33 @@ export default function HeaderBanner({ onOpenAdminPanel, onSelectCategory }) {
     }, 60);
   };
 
-  // Automatic smooth scrolling animation (pauses on mouse hover or touch)
+  // Safe cross-browser automatic smooth scrolling
   useEffect(() => {
     if (isHovered) return;
     const interval = setInterval(() => {
-      if (containerRef.current) {
-        const { scrollLeft, scrollWidth, clientWidth } = containerRef.current;
-        const maxScroll = scrollWidth - clientWidth;
-        if (maxScroll <= 0) return;
+      try {
+        if (containerRef.current) {
+          const el = containerRef.current;
+          const { scrollLeft, scrollWidth, clientWidth } = el;
+          const maxScroll = scrollWidth - clientWidth;
+          if (maxScroll <= 0) return;
 
-        if (scrollLeft >= maxScroll - 15) {
-          containerRef.current.scrollTo({ left: 0, behavior: 'smooth' });
-        } else {
-          containerRef.current.scrollBy({ left: 230, behavior: 'smooth' });
+          if (scrollLeft >= maxScroll - 15) {
+            if (typeof el.scrollTo === 'function') {
+              el.scrollTo({ left: 0, behavior: 'smooth' });
+            } else {
+              el.scrollLeft = 0;
+            }
+          } else {
+            if (typeof el.scrollBy === 'function') {
+              el.scrollBy({ left: 230, behavior: 'smooth' });
+            } else {
+              el.scrollLeft += 230;
+            }
+          }
         }
+      } catch (e) {
+        console.warn('Scroll animation warning:', e);
       }
     }, 3200);
     return () => clearInterval(interval);
@@ -215,7 +228,8 @@ export default function HeaderBanner({ onOpenAdminPanel, onSelectCategory }) {
             onMouseLeave={() => setIsHovered(false)}
             onTouchStart={() => setIsHovered(true)}
             onTouchEnd={() => setIsHovered(false)}
-            className="flex overflow-x-auto gap-3.5 pb-2 pt-1 px-1 sm:justify-center text-left scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            className="flex overflow-x-auto gap-3.5 pb-2 pt-1 px-1 sm:justify-center text-left scroll-smooth overflow-y-hidden"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {filteredItems.map((item) => (
               <button
@@ -234,7 +248,7 @@ export default function HeaderBanner({ onOpenAdminPanel, onSelectCategory }) {
                 </div>
 
                 <div>
-                  <p className={`text-xs font-black text-white group-hover:${item.accentColor} transition-colors`}>
+                  <p className="text-xs font-black text-white group-hover:text-amber-400 transition-colors">
                     {item.title}
                   </p>
                   <p className="text-sm font-black font-mono text-amber-400 pt-0.5">
@@ -244,7 +258,7 @@ export default function HeaderBanner({ onOpenAdminPanel, onSelectCategory }) {
 
                 <div className="pt-1.5 flex items-center justify-between text-[11px] font-bold text-slate-300 group-hover:text-white border-t border-slate-800/90">
                   <span>Ir al paquete</span>
-                  <ArrowRight className={`w-3.5 h-3.5 ${item.accentColor} group-hover:translate-x-1 transition-transform`} />
+                  <ArrowRight className="w-3.5 h-3.5 text-amber-400 group-hover:translate-x-1 transition-transform" />
                 </div>
               </button>
             ))}
@@ -256,4 +270,5 @@ export default function HeaderBanner({ onOpenAdminPanel, onSelectCategory }) {
     </header>
   );
 }
+
 
