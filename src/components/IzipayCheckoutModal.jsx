@@ -35,6 +35,38 @@ function splitName(fullNameStr = '') {
   };
 }
 
+function getDetailedRejectionReason(error) {
+  if (!error) return 'Pago rechazado por el banco emisor.';
+
+  const code = (error.detailedErrorCode || error.errorCode || error.code || error.actionCode || '').toString();
+  const rawMsg = (error.detailedErrorMessage || error.errorMessage || error.message || '').toString();
+
+  if (code === '51' || rawMsg.toLowerCase().includes('insufficient') || rawMsg.toLowerCase().includes('fondos')) {
+    return 'Fondos insuficientes: La tarjeta no cuenta con saldo disponible suficiente para esta compra.';
+  }
+  if (code === '54' || rawMsg.toLowerCase().includes('expired') || rawMsg.toLowerCase().includes('vencida')) {
+    return 'Tarjeta vencida: La fecha de expiración ingresada es incorrecta o la tarjeta ya expiró.';
+  }
+  if (code === 'N7' || code === '82' || rawMsg.toLowerCase().includes('cvv') || rawMsg.toLowerCase().includes('security code')) {
+    return 'Código de seguridad (CVV) incorrecto: Revisa los 3 dígitos al reverso de la tarjeta.';
+  }
+  if (code === '57' || rawMsg.toLowerCase().includes('not permitted') || rawMsg.toLowerCase().includes('no permitida') || rawMsg.toLowerCase().includes('no habilitada')) {
+    return 'Compras por internet no habilitadas: Debes activar las compras por internet desde la app de tu banco.';
+  }
+  if (code === '61' || code === '65' || rawMsg.toLowerCase().includes('limit') || rawMsg.toLowerCase().includes('limite')) {
+    return 'Límite superado: La transacción supera el límite de compras en línea permitido por tu banco.';
+  }
+  if (code === '05' || rawMsg.toLowerCase().includes('do not honor') || rawMsg.toLowerCase().includes('denegada')) {
+    return 'Denegada por el banco emisor: Tu banco denegó la transacción por seguridad. Intenta con otra tarjeta o contacta a tu banco.';
+  }
+
+  if (rawMsg && rawMsg !== 'Pago rechazado') {
+    return `Pago rechazado por el banco: ${rawMsg}${code ? ` (Código: ${code})` : ''}`;
+  }
+
+  return 'Pago rechazado por el banco emisor. Verifica que tu tarjeta tenga compras por internet activadas o intenta con otra tarjeta.';
+}
+
 export default function IzipayCheckoutModal({ 
   isOpen, 
   onClose, 
@@ -46,6 +78,19 @@ export default function IzipayCheckoutModal({
 }) {
   // Step state: 'info' (Datos del Alumno) -> 'payment' (Formulario Izipay)
   const [step, setStep] = useState('info');
+
+  // Animated dots for "Transacción en proceso..."
+  const [dotCount, setDotCount] = useState(1);
+
+  useEffect(() => {
+    if (!isProcessingPayment && !loadingToken) return;
+    const interval = setInterval(() => {
+      setDotCount((prev) => (prev >= 4 ? 1 : prev + 1));
+    }, 400);
+    return () => clearInterval(interval);
+  }, [isProcessingPayment, loadingToken]);
+
+  const dots = '.'.repeat(dotCount);
 
   // Student form fields (Separated Nombres, Apellidos, and DNI)
   const [studentFirstName, setStudentFirstName] = useState('');
@@ -363,10 +408,10 @@ export default function IzipayCheckoutModal({
             window.KR.onError((error) => {
               console.error('Error de pago en Izipay SDK:', error);
               setIsProcessingPayment(false);
-              const errTxt = error.errorMessage || 'Transacción rechazada por el banco emisor.';
+              const errTxt = getDetailedRejectionReason(error);
               setErrorMessage(errTxt);
 
-              // Notify n8n Webhook on rejection
+              // Notify n8n Webhook on rejection with detailed reason
               notifyN8n('REJECTED', errTxt, error);
             });
           }
@@ -433,30 +478,6 @@ export default function IzipayCheckoutModal({
       {/* Official Izipay Modal Container (Light clean card) */}
       <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl p-6 sm:p-7 text-slate-800 overflow-hidden max-h-[92vh] overflow-y-auto border border-slate-200">
         
-        {/* REAL-TIME PROCESSING OVERLAY DURING BANK VERIFICATION */}
-        {isProcessingPayment && (
-          <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-md rounded-2xl flex flex-col items-center justify-center p-6 text-center space-y-4 animate-fadeIn">
-            <div className="relative w-16 h-16 mx-auto">
-              <div className="w-16 h-16 rounded-full border-4 border-slate-200 border-t-[#00a499] animate-spin"></div>
-              <Clock className="w-7 h-7 text-[#00a499] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-            </div>
-
-            <div className="space-y-1.5 max-w-xs mx-auto">
-              <h4 className="text-base font-black text-slate-900 leading-snug">
-                Transacción en proceso, espera un momento porfavor...
-              </h4>
-              <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                Estamos procesando tu pago de forma segura con el banco emisor e Izipay Perú. No cierres esta ventana.
-              </p>
-            </div>
-
-            <div className="px-3.5 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>Procesamiento SSL 256-bit En Vivo</span>
-            </div>
-          </div>
-        )}
-
         {/* Top Right Close Circle Button */}
         <button
           onClick={handleCloseModal}
@@ -870,7 +891,7 @@ export default function IzipayCheckoutModal({
                     </div>
                     <div className="space-y-1.5 max-w-xs mx-auto">
                       <p className="text-base font-black text-slate-900 leading-tight">
-                        Transacción en proceso, espera un momento porfavor...
+                        Pago en proceso{dots}
                       </p>
                       <p className="text-xs text-slate-500 font-medium">
                         Generando sesión de pago segura con Izipay Perú...
@@ -919,6 +940,19 @@ export default function IzipayCheckoutModal({
                           {/* Error messaging rendered by Izipay SDK */}
                           <div className="kr-form-error text-xs text-rose-600 font-bold mt-2 text-center w-full"></div>
                         </div>
+
+                        {/* ANIMATED PROCESSING BANNER DIRECTLY BELOW BUTTON */}
+                        {isProcessingPayment && (
+                          <div className="p-3.5 bg-amber-500/10 border border-amber-500/40 text-amber-950 rounded-xl text-xs space-y-1 text-center animate-fadeIn shadow-sm mt-3 w-full">
+                            <div className="flex items-center justify-center space-x-2 font-black text-amber-950 text-sm">
+                              <RefreshCw className="w-4 h-4 text-amber-600 animate-spin" />
+                              <span>Pago en proceso{dots}</span>
+                            </div>
+                            <p className="text-[11px] text-slate-700 font-medium">
+                              Estamos validando los datos con tu banco emisor. Por favor espera un momento.
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
 
