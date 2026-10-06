@@ -79,19 +79,6 @@ export default function IzipayCheckoutModal({
   // Step state: 'info' (Datos del Alumno) -> 'payment' (Formulario Izipay)
   const [step, setStep] = useState('info');
 
-  // Animated dots for "Transacción en proceso..."
-  const [dotCount, setDotCount] = useState(1);
-
-  useEffect(() => {
-    if (!isProcessingPayment && !loadingToken) return;
-    const interval = setInterval(() => {
-      setDotCount((prev) => (prev >= 4 ? 1 : prev + 1));
-    }, 400);
-    return () => clearInterval(interval);
-  }, [isProcessingPayment, loadingToken]);
-
-  const dots = '.'.repeat(dotCount);
-
   // Student form fields (Separated Nombres, Apellidos, and DNI)
   const [studentFirstName, setStudentFirstName] = useState('');
   const [studentLastName, setStudentLastName] = useState('');
@@ -112,6 +99,19 @@ export default function IzipayCheckoutModal({
 
   // Mode: 'production' by default for real bank charges
   const [izipayMode, setIzipayMode] = useState('production');
+
+  // Animated dots for "Transacción en proceso..."
+  const [dotCount, setDotCount] = useState(1);
+
+  useEffect(() => {
+    if (!isProcessingPayment && !loadingToken) return;
+    const interval = setInterval(() => {
+      setDotCount((prev) => (prev >= 4 ? 1 : prev + 1));
+    }, 400);
+    return () => clearInterval(interval);
+  }, [isProcessingPayment, loadingToken]);
+
+  const dots = '.'.repeat(dotCount);
   
   // Custom amount state (allows admin to select S/ 1.00 test or full amount)
   const baseAmount = amount || 540;

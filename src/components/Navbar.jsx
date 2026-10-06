@@ -24,7 +24,10 @@ export default function Navbar({
               className="h-8 sm:h-9 object-contain group-hover:opacity-90 transition-opacity" 
               onError={(e) => {
                 e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'flex';
+                if (e.target.parentElement) {
+                  const logoText = e.target.parentElement.querySelector('div');
+                  if (logoText) logoText.style.display = 'flex';
+                }
               }}
             />
             <div className="hidden items-center space-x-1 font-extrabold text-xl tracking-tight text-white">

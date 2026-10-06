@@ -14,92 +14,94 @@ import Footer from './components/Footer';
 
 import { validatePaymentIntegrity } from './utils/securityUtils';
 
+// Official Specialization Packages (Module Constant to prevent TDZ hoisting issues)
+const OFFICIAL_PACKAGES = [
+  {
+    id: 'completo',
+    category: 'diplomado',
+    title: 'PROGRAMA COMPLETO',
+    badgeBg: 'bg-[#00e676]',
+    basePrice: 540,
+    originalPrice: 1800,
+    cuotaOptions: [
+      { count: 2, amount: 300, total: 600 }
+    ],
+    items: [
+      { text: '1 DIPLOMADO DE ALTA ESPECIALIZACIÓN + DIPLOMA', included: true },
+      { text: 'CERTIFICACIONES DE PROGRAMAS DE ALTA ESPECIALIZACIÓN', included: true },
+      { text: '3 CURSOS A ELECCIÓN ASINCRÓNICOS', included: true },
+      { text: 'PROGRAMA DREAMBUILDER POR CERRO VERDE', included: false },
+      { text: 'ACCESO A BOLSA DE TRABAJO REGULAR', included: true },
+      { text: 'ACCESO A BOLSA DE TRABAJO EXCLUSIVA (MÁS DE 100 OFERTAS LABORALES AL MES)', included: false },
+      { text: 'CERTIFICACIÓN CIP: OPCIÓN DE CERTIFICARTE UNA VEZ CON AVAL DEL COLEGIO DE INGENIEROS DEL PERÚ (VÁLIDO PARA 1 DIPLOMADO)', included: true },
+      { text: 'CERTIFICACIÓN INTERNACIONAL: CERTIFICACIÓN INTERNACIONAL CON VALIDEZ GLOBAL EN UN DIPLOMADO DE TU ELECCIÓN (VÁLIDO PARA 1 DIPLOMADO)', included: false },
+    ],
+  },
+  {
+    id: 'full',
+    category: 'diplomado',
+    title: 'PROGRAMA FULL',
+    badgeBg: 'bg-[#ff9800]',
+    basePrice: 900,
+    originalPrice: 3000,
+    cuotaOptions: [
+      { count: 3, amount: 350, total: 1050 }
+    ],
+    items: [
+      { text: '1 DIPLOMADO DE ALTA ESPECIALIZACIÓN + DIPLOMA + 3 CERTIFICACIONES DE PROGRAMAS DE ALTA ESPECIALIZACIÓN', included: true },
+      { text: '5 CURSOS A ELECCIÓN ASINCRÓNICOS', included: true },
+      { text: 'PROGRAMA DREAMBUILDER POR CERRO VERDE', included: true },
+      { text: 'ACCESO A BOLSA DE TRABAJO REGULAR', included: true },
+      { text: 'ACCESO A BOLSA DE TRABAJO EXCLUSIVA (MÁS DE 100 OFERTAS LABORALES AL MES)', included: true },
+      { text: 'CERTIFICACIÓN CIP: OPCIÓN DE CERTIFICARTE UNA VEZ CON AVAL DEL COLEGIO DE INGENIEROS DEL PERÚ (VÁLIDO PARA 1 DIPLOMADO)', included: true },
+      { text: 'CERTIFICACIÓN INTERNACIONAL: CERTIFICACIÓN INTERNACIONAL CON VALIDEZ GLOBAL EN UN DIPLOMADO DE TU ELECCIÓN (VÁLIDO PARA 1 DIPLOMADO)', included: true },
+    ],
+  },
+  {
+    id: 'ilimitado',
+    category: 'diplomado',
+    title: 'PROGRAMA ILIMITADO',
+    badgeBg: 'bg-[#ff1744]',
+    basePrice: 1500,
+    originalPrice: 5000,
+    note: 'NOTA: ACCESO ILIMITADO POR 2 AÑOS.',
+    cuotaOptions: [
+      { count: 3, amount: 530, total: 1590 },
+      { count: 4, amount: 400, total: 1600 }
+    ],
+    items: [
+      { text: 'DIPLOMADOS ILIMITADOS + DIPLOMA', included: true },
+      { text: 'CERTIFICADOS DE PROGRAMAS DE ALTA ESPECIALIZACIÓN EDUMIN SIN LÍMITE', included: true },
+      { text: 'CURSOS A ELECCIÓN ASINCRÓNICOS ILIMITADOS', included: true },
+      { text: 'PROGRAMA DREAMBUILDER POR CERRO VERDE', included: true },
+      { text: 'ACCESO A BOLSA DE TRABAJO REGULAR', included: true },
+      { text: 'ACCESO A BOLSA DE TRABAJO EXCLUSIVA (MÁS DE 100 OFERTAS LABORALES AL MES)', included: true },
+      { text: 'CERTIFICACIÓN CIP: OPCIÓN DE CERTIFICARTE UNA VEZ CON AVAL DEL COLEGIO DE INGENIEROS DEL PERÚ (VÁLIDO PARA 1 DIPLOMADO)', included: true },
+      { text: 'CERTIFICACIÓN INTERNACIONAL: CERTIFICACIÓN INTERNACIONAL CON VALIDEZ GLOBAL EN UN DIPLOMADO DE TU ELECCIÓN (VÁLIDO PARA 1 DIPLOMADO)', included: true },
+    ],
+  },
+  {
+    id: 'curso_ia',
+    category: 'curso',
+    title: 'CURSO IA DE 0 A 100',
+    badgeBg: 'bg-[#7c4dff]',
+    basePrice: 149,
+    originalPrice: 500,
+    note: 'CURSO ASINCRÓNICO DE INTELIGENCIA ARTIFICIAL APLICADA',
+    cuotaOptions: [],
+    items: [
+      { text: 'ACCESO COMPLETO AL CURSO DE IA DE 0 A 100', included: true },
+      { text: 'CERTIFICADO DE FINALIZACIÓN Y PARTICIPACIÓN EDUMIN', included: true },
+      { text: 'PROMPTS, HERRAMIENTAS Y GUÍAS DESCARGABLES', included: true },
+      { text: 'ACCESO A AULA VIRTUAL Q10', included: true },
+      { text: 'ACCESO A BOLSA DE TRABAJO REGULAR', included: true },
+      { text: 'ASISTENCIA Y SOPORTE PERMANENTE POR WHATSAPP', included: true },
+    ],
+  },
+];
+
 export default function App() {
-  // Official Specialization Packages
-  const packages = [
-    {
-      id: 'completo',
-      category: 'diplomado',
-      title: 'PROGRAMA COMPLETO',
-      badgeBg: 'bg-[#00e676]',
-      basePrice: 540,
-      originalPrice: 1800,
-      cuotaOptions: [
-        { count: 2, amount: 300, total: 600 }
-      ],
-      items: [
-        { text: '1 DIPLOMADO DE ALTA ESPECIALIZACIÓN + DIPLOMA', included: true },
-        { text: 'CERTIFICACIONES DE PROGRAMAS DE ALTA ESPECIALIZACIÓN', included: true },
-        { text: '3 CURSOS A ELECCIÓN ASINCRÓNICOS', included: true },
-        { text: 'PROGRAMA DREAMBUILDER POR CERRO VERDE', included: false },
-        { text: 'ACCESO A BOLSA DE TRABAJO REGULAR', included: true },
-        { text: 'ACCESO A BOLSA DE TRABAJO EXCLUSIVA (MÁS DE 100 OFERTAS LABORALES AL MES)', included: false },
-        { text: 'CERTIFICACIÓN CIP: OPCIÓN DE CERTIFICARTE UNA VEZ CON AVAL DEL COLEGIO DE INGENIEROS DEL PERÚ (VÁLIDO PARA 1 DIPLOMADO)', included: true },
-        { text: 'CERTIFICACIÓN INTERNACIONAL: CERTIFICACIÓN INTERNACIONAL CON VALIDEZ GLOBAL EN UN DIPLOMADO DE TU ELECCIÓN (VÁLIDO PARA 1 DIPLOMADO)', included: false },
-      ],
-    },
-    {
-      id: 'full',
-      category: 'diplomado',
-      title: 'PROGRAMA FULL',
-      badgeBg: 'bg-[#ff9800]',
-      basePrice: 900,
-      originalPrice: 3000,
-      cuotaOptions: [
-        { count: 3, amount: 350, total: 1050 }
-      ],
-      items: [
-        { text: '1 DIPLOMADO DE ALTA ESPECIALIZACIÓN + DIPLOMA + 3 CERTIFICACIONES DE PROGRAMAS DE ALTA ESPECIALIZACIÓN', included: true },
-        { text: '5 CURSOS A ELECCIÓN ASINCRÓNICOS', included: true },
-        { text: 'PROGRAMA DREAMBUILDER POR CERRO VERDE', included: true },
-        { text: 'ACCESO A BOLSA DE TRABAJO REGULAR', included: true },
-        { text: 'ACCESO A BOLSA DE TRABAJO EXCLUSIVA (MÁS DE 100 OFERTAS LABORALES AL MES)', included: true },
-        { text: 'CERTIFICACIÓN CIP: OPCIÓN DE CERTIFICARTE UNA VEZ CON AVAL DEL COLEGIO DE INGENIEROS DEL PERÚ (VÁLIDO PARA 1 DIPLOMADO)', included: true },
-        { text: 'CERTIFICACIÓN INTERNACIONAL: CERTIFICACIÓN INTERNACIONAL CON VALIDEZ GLOBAL EN UN DIPLOMADO DE TU ELECCIÓN (VÁLIDO PARA 1 DIPLOMADO)', included: true },
-      ],
-    },
-    {
-      id: 'ilimitado',
-      category: 'diplomado',
-      title: 'PROGRAMA ILIMITADO',
-      badgeBg: 'bg-[#ff1744]',
-      basePrice: 1500,
-      originalPrice: 5000,
-      note: 'NOTA: ACCESO ILIMITADO POR 2 AÑOS.',
-      cuotaOptions: [
-        { count: 3, amount: 530, total: 1590 },
-        { count: 4, amount: 400, total: 1600 }
-      ],
-      items: [
-        { text: 'DIPLOMADOS ILIMITADOS + DIPLOMA', included: true },
-        { text: 'CERTIFICADOS DE PROGRAMAS DE ALTA ESPECIALIZACIÓN EDUMIN SIN LÍMITE', included: true },
-        { text: 'CURSOS A ELECCIÓN ASINCRÓNICOS ILIMITADOS', included: true },
-        { text: 'PROGRAMA DREAMBUILDER POR CERRO VERDE', included: true },
-        { text: 'ACCESO A BOLSA DE TRABAJO REGULAR', included: true },
-        { text: 'ACCESO A BOLSA DE TRABAJO EXCLUSIVA (MÁS DE 100 OFERTAS LABORALES AL MES)', included: true },
-        { text: 'CERTIFICACIÓN CIP: OPCIÓN DE CERTIFICARTE UNA VEZ CON AVAL DEL COLEGIO DE INGENIEROS DEL PERÚ (VÁLIDO PARA 1 DIPLOMADO)', included: true },
-        { text: 'CERTIFICACIÓN INTERNACIONAL: CERTIFICACIÓN INTERNACIONAL CON VALIDEZ GLOBAL EN UN DIPLOMADO DE TU ELECCIÓN (VÁLIDO PARA 1 DIPLOMADO)', included: true },
-      ],
-    },
-    {
-      id: 'curso_ia',
-      category: 'curso',
-      title: 'CURSO IA DE 0 A 100',
-      badgeBg: 'bg-[#7c4dff]',
-      basePrice: 149,
-      originalPrice: 500,
-      note: 'CURSO ASINCRÓNICO DE INTELIGENCIA ARTIFICIAL APLICADA',
-      cuotaOptions: [],
-      items: [
-        { text: 'ACCESO COMPLETO AL CURSO DE IA DE 0 A 100', included: true },
-        { text: 'CERTIFICADO DE FINALIZACIÓN Y PARTICIPACIÓN EDUMIN', included: true },
-        { text: 'PROMPTS, HERRAMIENTAS Y GUÍAS DESCARGABLES', included: true },
-        { text: 'ACCESO A AULA VIRTUAL Q10', included: true },
-        { text: 'ACCESO A BOLSA DE TRABAJO REGULAR', included: true },
-        { text: 'ASISTENCIA Y SOPORTE PERMANENTE POR WHATSAPP', included: true },
-      ],
-    },
-  ];
+  const packages = OFFICIAL_PACKAGES;
 
   // Shopping Cart State
   const [cartItems, setCartItems] = useState([]);
@@ -281,7 +283,7 @@ export default function App() {
       const hash = window.location.hash || '';
       
       if (hash.includes('admin') || hash.includes('asesora')) {
-        setSelectedPackageForAdmin(packages[0]);
+        setSelectedPackageForAdmin(OFFICIAL_PACKAGES[0]);
         setIsAdminPanelOpen(true);
         setIsAsesoraLoginOpen(false);
         return;
@@ -289,52 +291,66 @@ export default function App() {
 
       if (hash.includes('checkout') && hash.includes('?')) {
         const queryStr = hash.split('?')[1];
-        const params = new URLSearchParams(queryStr);
-        if (params.get('cliente') || params.get('nom') || params.get('monto')) {
-          const reqId = params.get('id') || 'PAGO-CUSTOM';
-          const reqAmount = Number(params.get('monto')) || 540;
-          const reqPkg = params.get('pkg') || 'PROGRAMA COMPLETO';
-          const reqSig = params.get('sig') || '';
-          const reqExp = params.get('exp') || '';
+        if (queryStr) {
+          const params = new URLSearchParams(queryStr);
+          if (params.get('cliente') || params.get('nom') || params.get('monto')) {
+            const reqId = params.get('id') || 'PAGO-CUSTOM';
+            const reqAmount = Number(params.get('monto')) || 540;
+            const reqPkg = params.get('pkg') || 'PROGRAMA COMPLETO';
+            const reqSig = params.get('sig') || '';
+            const reqExp = params.get('exp') || '';
 
-          // Validate link integrity against cryptographic signature, 24h expiration & official package prices
-          const validation = validatePaymentIntegrity({
-            orderId: reqId,
-            amount: reqAmount,
-            packageName: reqPkg,
-            sig: reqSig,
-            exp: reqExp
-          });
+            // Validate link integrity against cryptographic signature, 24h expiration & official package prices
+            const validation = validatePaymentIntegrity({
+              orderId: reqId,
+              amount: reqAmount,
+              packageName: reqPkg,
+              sig: reqSig,
+              exp: reqExp
+            });
 
-          if (!validation.valid) {
-            alert(`⛔ ALERTA DE SEGURIDAD / EXPIRACIÓN:\n\n${validation.error}`);
-            window.location.hash = '';
-            return;
+            if (!validation.valid) {
+              alert(`⛔ ALERTA DE SEGURIDAD / EXPIRACIÓN:\n\n${validation.error}`);
+              window.location.hash = '';
+              return;
+            }
+
+            const studentOrder = {
+              id: reqId,
+              firstName: params.get('nom') || '',
+              lastName: params.get('ape') || '',
+              clientName: params.get('cliente') || '',
+              dni: params.get('dni') || '',
+              phone: params.get('tel') || '',
+              email: params.get('email') || '',
+              diplomado: params.get('dip') || params.get('diplomado') || '',
+              amount: reqAmount,
+              packageName: reqPkg,
+              sig: reqSig,
+              exp: reqExp
+            };
+            setActiveStudentCheckoutData(studentOrder);
+            setIsStudentCheckoutOpen(true);
           }
-
-          const studentOrder = {
-            id: reqId,
-            firstName: params.get('nom') || '',
-            lastName: params.get('ape') || '',
-            clientName: params.get('cliente') || '',
-            dni: params.get('dni') || '',
-            phone: params.get('tel') || '',
-            email: params.get('email') || '',
-            diplomado: params.get('dip') || params.get('diplomado') || '',
-            amount: reqAmount,
-            packageName: reqPkg,
-            sig: reqSig,
-            exp: reqExp
-          };
-          setActiveStudentCheckoutData(studentOrder);
-          setIsStudentCheckoutOpen(true);
         }
       }
     };
 
-    checkHashOrder();
-    window.addEventListener('hashchange', checkHashOrder);
-    return () => window.removeEventListener('hashchange', checkHashOrder);
+    // Defer initial hash check so React completes hook initialization
+    const timer = setTimeout(() => {
+      checkHashOrder();
+    }, 0);
+
+    const onHashChange = () => {
+      checkHashOrder();
+    };
+
+    window.addEventListener('hashchange', onHashChange);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('hashchange', onHashChange);
+    };
   }, []);
 
   const handleOpenAdminPanel = (pkgData) => {

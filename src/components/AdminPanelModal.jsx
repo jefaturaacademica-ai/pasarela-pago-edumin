@@ -46,6 +46,9 @@ export default function AdminPanelModal({
   const [copied, setCopied] = useState(false);
   const [currentCreatedPlan, setCurrentCreatedPlan] = useState(null);
 
+  const safeTransactions = Array.isArray(successfulTransactions) ? successfulTransactions : [];
+  const safePlans = Array.isArray(installmentPlans) ? installmentPlans : [];
+
   if (!isOpen) return null;
 
   const handleConceptTypeChange = (type) => {
@@ -217,7 +220,7 @@ export default function AdminPanelModal({
             }`}
           >
             <CheckCircle2 className="w-4 h-4 text-emerald-950" />
-            <span>✅ Transacciones Exitosas ({successfulTransactions.length})</span>
+            <span>✅ Transacciones Exitosas ({safeTransactions.length})</span>
           </button>
 
           <button
@@ -447,12 +450,12 @@ export default function AdminPanelModal({
               <div className="p-3.5 rounded-2xl bg-emerald-950/60 border border-emerald-500/30 text-emerald-300">
                 <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">Total Recaudado</span>
                 <span className="text-xl font-black text-emerald-400">
-                  S/ {successfulTransactions.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0).toFixed(2)}
+                  S/ {safeTransactions.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0).toFixed(2)}
                 </span>
               </div>
               <div className="p-3.5 rounded-2xl bg-blue-950/60 border border-blue-500/30 text-blue-300">
                 <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">Pagos Aprobados</span>
-                <span className="text-xl font-black text-blue-400">{successfulTransactions.length} Transacciones</span>
+                <span className="text-xl font-black text-blue-400">{safeTransactions.length} Transacciones</span>
               </div>
               <div className="p-3.5 rounded-2xl bg-amber-950/60 border border-amber-500/30 text-amber-300">
                 <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider block">Notificación Q10 / n8n</span>
@@ -473,7 +476,7 @@ export default function AdminPanelModal({
 
             {/* List of Payments */}
             <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
-              {successfulTransactions
+              {safeTransactions
                 .filter(t => {
                   if (!searchTerm) return true;
                   const search = searchTerm.toLowerCase();
@@ -544,7 +547,7 @@ export default function AdminPanelModal({
                     )}
                   </div>
                 ))}
-              {successfulTransactions.length === 0 && (
+              {safeTransactions.length === 0 && (
                 <div className="p-8 text-center text-slate-500 bg-slate-900/50 rounded-2xl border border-slate-800">
                   <CheckCircle2 className="w-8 h-8 text-slate-600 mx-auto mb-2" />
                   <p className="font-bold text-slate-400">Aún no hay transacciones registradas</p>
@@ -558,7 +561,7 @@ export default function AdminPanelModal({
         {/* TAB 4: GENERAL HISTORY */}
         {activeTab === 'history' && (
           <div className="space-y-3 text-xs animate-fadeIn">
-            {installmentPlans.map((plan) => (
+            {safePlans.map((plan) => (
               <div key={plan.id} className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex justify-between items-center">
                 <div>
                   <p className="font-bold text-white">{plan.clientName} - {plan.packageName}</p>
