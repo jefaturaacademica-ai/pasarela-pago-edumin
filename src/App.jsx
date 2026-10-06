@@ -19,6 +19,7 @@ export default function App() {
   const packages = [
     {
       id: 'completo',
+      category: 'diplomado',
       title: 'PROGRAMA COMPLETO',
       badgeBg: 'bg-[#00e676]',
       basePrice: 540,
@@ -39,6 +40,7 @@ export default function App() {
     },
     {
       id: 'full',
+      category: 'diplomado',
       title: 'PROGRAMA FULL',
       badgeBg: 'bg-[#ff9800]',
       basePrice: 900,
@@ -58,6 +60,7 @@ export default function App() {
     },
     {
       id: 'ilimitado',
+      category: 'diplomado',
       title: 'PROGRAMA ILIMITADO',
       badgeBg: 'bg-[#ff1744]',
       basePrice: 1500,
@@ -80,6 +83,7 @@ export default function App() {
     },
     {
       id: 'curso_ia',
+      category: 'curso',
       title: 'CURSO IA DE 0 A 100',
       badgeBg: 'bg-[#7c4dff]',
       basePrice: 149,
@@ -100,6 +104,9 @@ export default function App() {
   // Shopping Cart State
   const [cartItems, setCartItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+
+  // Category Filter State: 'diplomado' | 'curso'
+  const [activeCategory, setActiveCategory] = useState('diplomado');
 
   // Official Izipay Pop-in Checkout State
   const [isIzipayCheckoutOpen, setIsIzipayCheckoutOpen] = useState(false);
@@ -387,32 +394,65 @@ export default function App() {
       {/* Main Header Banner */}
       <HeaderBanner 
         onOpenAdminPanel={() => handleOpenAdminPanel(null)}
+        onSelectCategory={(cat) => setActiveCategory(cat)}
       />
 
-      {/* Main 3 Specialization Packages Grid */}
+      {/* Main Specialization Packages & Courses Grid */}
       <main className="flex-1 py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-16">
         
-        <div className="space-y-10">
+        <div className="space-y-8">
           <div className="text-center max-w-2xl mx-auto space-y-2">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
               Programas de Especialización Internacional
             </h2>
             <p className="text-xs sm:text-sm text-slate-600">
-              Añade tu programa al carrito de compras o realiza el pago directo mediante la pasarela de pagos <strong>Izipay Online</strong>.
+              Selecciona entre nuestros <strong>Diplomados de Especialización</strong> o <strong>Cursos Asincrónicos</strong> y realiza tu inscripción inmediata con <strong>Izipay Online</strong>.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
-            {packages.map((pkg) => (
-              <div key={pkg.id} id={`package-${pkg.id}`} className="scroll-mt-28 flex flex-col">
-                <PackageCard
-                  packageData={pkg}
-                  onAddToCart={handleAddToCart}
-                  onDirectIzipayCheckout={handleDirectIzipayCheckout}
-                  onOpenAdminPanel={handleOpenAdminPanel}
-                />
-              </div>
-            ))}
+          {/* Category Filter Selector Buttons (DIPLOMADOS vs CURSOS) */}
+          <div id="catalog-section" className="flex flex-wrap justify-center items-center gap-3 pt-2 scroll-mt-28">
+            <button
+              type="button"
+              onClick={() => setActiveCategory('diplomado')}
+              className={`px-6 py-3.5 rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer shadow-lg flex items-center space-x-2 border ${
+                activeCategory === 'diplomado'
+                  ? 'bg-slate-900 text-amber-400 border-amber-400 shadow-xl scale-105 ring-2 ring-amber-400/30'
+                  : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50 hover:text-slate-900'
+              }`}
+            >
+              <span className="text-base">🎓</span>
+              <span>DIPLOMADOS DE ESPECIALIZACIÓN ({packages.filter(p => p.category === 'diplomado').length})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveCategory('curso')}
+              className={`px-6 py-3.5 rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all cursor-pointer shadow-lg flex items-center space-x-2 border ${
+                activeCategory === 'curso'
+                  ? 'bg-slate-900 text-purple-400 border-purple-400 shadow-xl scale-105 ring-2 ring-purple-400/30'
+                  : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50 hover:text-slate-900'
+              }`}
+            >
+              <span className="text-base">⚡</span>
+              <span>CURSOS ASINCRÓNICOS ({packages.filter(p => p.category === 'curso').length})</span>
+            </button>
+          </div>
+
+          {/* Filtered Packages Grid */}
+          <div className={activeCategory === 'diplomado' ? "grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch max-w-6xl mx-auto" : "flex justify-center max-w-md mx-auto"}>
+            {packages
+              .filter((pkg) => pkg.category === activeCategory)
+              .map((pkg) => (
+                <div key={pkg.id} id={`package-${pkg.id}`} className="scroll-mt-28 flex flex-col w-full">
+                  <PackageCard
+                    packageData={pkg}
+                    onAddToCart={handleAddToCart}
+                    onDirectIzipayCheckout={handleDirectIzipayCheckout}
+                    onOpenAdminPanel={handleOpenAdminPanel}
+                  />
+                </div>
+              ))}
           </div>
         </div>
 

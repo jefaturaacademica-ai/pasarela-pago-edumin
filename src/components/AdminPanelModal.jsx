@@ -294,24 +294,26 @@ export default function AdminPanelModal({
 
             {/* Required Client & Diplomado Fields */}
             <div className="space-y-3">
-              <div className="space-y-1">
-                <label className="font-bold text-slate-300 flex items-center gap-1.5">
-                  <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Diplomado Asignado (Opcional):</span>
-                </label>
-                <select
-                  value={customLinkData.diplomado}
-                  onChange={(e) => setCustomLinkData({ ...customLinkData, diplomado: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs font-semibold focus:outline-none focus:border-amber-400 cursor-pointer"
-                >
-                  <option value="">-- El alumno lo seleccionará al pagar --</option>
-                  {DIPLOMADOS_LIST.map((dip, idx) => (
-                    <option key={idx} value={dip} className="bg-slate-900 text-white">
-                      {dip}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {!customLinkData.conceptType.toUpperCase().includes('CURSO IA') && (
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300 flex items-center gap-1.5">
+                    <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Diplomado Asignado (Opcional):</span>
+                  </label>
+                  <select
+                    value={customLinkData.diplomado}
+                    onChange={(e) => setCustomLinkData({ ...customLinkData, diplomado: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs font-semibold focus:outline-none focus:border-amber-400 cursor-pointer"
+                  >
+                    <option value="">-- El alumno lo seleccionará al pagar --</option>
+                    {DIPLOMADOS_LIST.map((dip, idx) => (
+                      <option key={idx} value={dip} className="bg-slate-900 text-white">
+                        {dip}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">

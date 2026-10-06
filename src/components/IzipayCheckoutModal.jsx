@@ -16,7 +16,8 @@ import {
   ArrowRight,
   Edit2,
   GraduationCap,
-  Clock
+  Clock,
+  Sparkles
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { createIzipayPaymentToken, loadIzipayScript, IZIPAY_CONFIG } from '../utils/izipayService';
@@ -687,26 +688,36 @@ export default function IzipayCheckoutModal({
                     </div>
                   </div>
 
-                  {/* FIELD 1: DIPLOMADO SELECTION */}
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1">
-                      <GraduationCap className="w-3.5 h-3.5 text-[#00a499]" />
-                      Diplomado *
-                    </label>
-                    <select
-                      required
-                      value={studentDiplomado}
-                      onChange={(e) => setStudentDiplomado(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#00a499] focus:border-[#00a499] outline-none transition-all shadow-sm cursor-pointer"
-                    >
-                      <option value="" disabled>-- Selecciona tu Diplomado --</option>
-                      {DIPLOMADOS_LIST.map((dip, idx) => (
-                        <option key={idx} value={dip}>
-                          {dip}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* FIELD 1: DIPLOMADO SELECTION (HIDDEN FOR CURSO IA) */}
+                  {(packageName.toUpperCase().includes('CURSO IA') || studentDiplomado.toUpperCase().includes('CURSO IA')) ? (
+                    <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-xs text-purple-900 flex items-center justify-between font-bold shadow-xs">
+                      <span className="flex items-center gap-1.5">
+                        <Sparkles className="w-4 h-4 text-purple-600 shrink-0" />
+                        <span>Programa: <strong>CURSO DE IA DE 0 A 100</strong></span>
+                      </span>
+                      <span className="text-[10px] bg-purple-200 text-purple-950 px-2 py-0.5 rounded-full uppercase font-extrabold">Curso Asincrónico</span>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1">
+                        <GraduationCap className="w-3.5 h-3.5 text-[#00a499]" />
+                        Diplomado *
+                      </label>
+                      <select
+                        required
+                        value={studentDiplomado}
+                        onChange={(e) => setStudentDiplomado(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#00a499] focus:border-[#00a499] outline-none transition-all shadow-sm cursor-pointer"
+                      >
+                        <option value="" disabled>-- Selecciona tu Diplomado --</option>
+                        {DIPLOMADOS_LIST.map((dip, idx) => (
+                          <option key={idx} value={dip}>
+                            {dip}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
                   {/* FIELD 2: NOMBRES Y APELLIDOS SEPARADOS */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">

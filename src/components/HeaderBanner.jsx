@@ -1,16 +1,24 @@
 import React from 'react';
 
-export default function HeaderBanner({ onOpenAdminPanel }) {
+export default function HeaderBanner({ onOpenAdminPanel, onSelectCategory }) {
   const handleCuotasWhatsApp = () => {
     const message = `Hola asesora EDUMIN 🎓, deseo consultar sobre los Programas de Especialización y solicitar las facilidades de pago en cuotas.`;
     window.open(`https://wa.me/51951101765?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const scrollToPackage = (pkgId) => {
-    const el = document.getElementById(`package-${pkgId}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (pkgId === 'curso_ia') {
+      if (onSelectCategory) onSelectCategory('curso');
+    } else {
+      if (onSelectCategory) onSelectCategory('diplomado');
     }
+
+    setTimeout(() => {
+      const el = document.getElementById(`package-${pkgId}`) || document.getElementById('catalog-section');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 60);
   };
 
   return (
