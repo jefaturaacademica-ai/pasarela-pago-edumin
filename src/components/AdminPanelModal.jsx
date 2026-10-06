@@ -94,11 +94,22 @@ export default function AdminPanelModal({
   // Generate Custom Link
   const handleGenerateCustomLink = (e) => {
     e.preventDefault();
+
+    if (customLinkData.conceptType === 'OTROS' && !customLinkData.customConceptText.trim()) {
+      alert('Por favor especifica el concepto manual para la opción OTROS.');
+      return;
+    }
+
+    if (!customLinkData.customAmount || Number(customLinkData.customAmount) <= 0) {
+      alert('Por favor ingresa un monto libre válido mayor a S/ 0.');
+      return;
+    }
+
     const linkId = 'PAY-CUSTOM-' + Math.floor(100000 + Math.random() * 900000);
     const origin = window.location.origin;
 
     const finalConcept = customLinkData.conceptType === 'OTROS'
-      ? (customLinkData.customConceptText.trim() || 'OTROS')
+      ? customLinkData.customConceptText.trim()
       : customLinkData.conceptType;
 
     const fullName = `${customLinkData.clientFirstName.trim()} ${customLinkData.clientLastName.trim()}`.trim();
@@ -339,10 +350,9 @@ export default function AdminPanelModal({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-300">1. Nombres del Cliente:</label>
+                  <label className="font-bold text-slate-300">1. Nombres del Cliente (Opcional):</label>
                   <input
                     type="text"
-                    required
                     placeholder="Ej. Carlos Eduardo"
                     value={customLinkData.clientFirstName}
                     onChange={(e) => setCustomLinkData({ ...customLinkData, clientFirstName: e.target.value })}
@@ -351,10 +361,9 @@ export default function AdminPanelModal({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-300">2. Apellidos del Cliente:</label>
+                  <label className="font-bold text-slate-300">2. Apellidos del Cliente (Opcional):</label>
                   <input
                     type="text"
-                    required
                     placeholder="Ej. Mendoza Prado"
                     value={customLinkData.clientLastName}
                     onChange={(e) => setCustomLinkData({ ...customLinkData, clientLastName: e.target.value })}
@@ -363,10 +372,10 @@ export default function AdminPanelModal({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-300">3. DNI / Documento de Identidad:</label>
+                  <label className="font-bold text-slate-300">3. DNI / Documento (Opcional):</label>
                   <input
                     type="text"
-                    placeholder="Ej. 74829102 (Opcional)"
+                    placeholder="Ej. 74829102"
                     value={customLinkData.dni}
                     onChange={(e) => setCustomLinkData({ ...customLinkData, dni: e.target.value })}
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-mono text-amber-300"
@@ -374,11 +383,10 @@ export default function AdminPanelModal({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-300">4. Número de WhatsApp:</label>
+                  <label className="font-bold text-slate-300">4. Número de WhatsApp (Opcional):</label>
                   <input
                     type="tel"
-                    required
-                    placeholder="987654321"
+                    placeholder="Ej. 987654321"
                     value={customLinkData.phone}
                     onChange={(e) => setCustomLinkData({ ...customLinkData, phone: e.target.value })}
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-mono"
@@ -386,11 +394,10 @@ export default function AdminPanelModal({
                 </div>
 
                 <div className="sm:col-span-2 space-y-1">
-                  <label className="font-bold text-slate-300">5. Correo Electrónico:</label>
+                  <label className="font-bold text-slate-300">5. Correo Electrónico (Opcional):</label>
                   <input
                     type="email"
-                    required
-                    placeholder="carlos@gmail.com"
+                    placeholder="Ej. carlos@gmail.com"
                     value={customLinkData.email}
                     onChange={(e) => setCustomLinkData({ ...customLinkData, email: e.target.value })}
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white"
