@@ -29,6 +29,12 @@ export default class ErrorBoundary extends React.Component {
             <button
               onClick={() => {
                 if (typeof window !== 'undefined') {
+                  try {
+                    localStorage.removeItem('edumin_asesora_session');
+                    localStorage.removeItem('edumin_last_student_info');
+                  } catch (e) {
+                    console.warn('Error clearing localStorage:', e);
+                  }
                   window.location.href = window.location.origin + window.location.pathname;
                 }
               }}

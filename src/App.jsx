@@ -113,9 +113,18 @@ export default function App() {
   const [izipayCheckoutAmount, setIzipayCheckoutAmount] = useState(540);
   const [izipayCheckoutItems, setIzipayCheckoutItems] = useState([]);
 
-  // Asesora Auth State
+  // Asesora Auth State (Safely parsed from localStorage)
   const [asesoraSession, setAsesoraSession] = useState(() => {
-    return localStorage.getItem('edumin_asesora_session') ? JSON.parse(localStorage.getItem('edumin_asesora_session')) : null;
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        const saved = localStorage.getItem('edumin_asesora_session');
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.warn('Error reading edumin_asesora_session from localStorage:', e);
+        try { localStorage.removeItem('edumin_asesora_session'); } catch (_) {}
+      }
+    }
+    return null;
   });
 
   // Modals & App State
@@ -340,14 +349,22 @@ export default function App() {
 
   const handleAsesoraLoginSuccess = (sessionData) => {
     setAsesoraSession(sessionData);
-    localStorage.setItem('edumin_asesora_session', JSON.stringify(sessionData));
+    try {
+      localStorage.setItem('edumin_asesora_session', JSON.stringify(sessionData));
+    } catch (e) {
+      console.warn('Error saving edumin_asesora_session to localStorage:', e);
+    }
     setIsAsesoraLoginOpen(false);
     setIsAdminPanelOpen(true);
   };
 
   const handleAsesoraLogout = () => {
     setAsesoraSession(null);
-    localStorage.removeItem('edumin_asesora_session');
+    try {
+      localStorage.removeItem('edumin_asesora_session');
+    } catch (e) {
+      console.warn('Error removing edumin_asesora_session from localStorage:', e);
+    }
     setIsAdminPanelOpen(false);
     window.location.hash = '';
   };
