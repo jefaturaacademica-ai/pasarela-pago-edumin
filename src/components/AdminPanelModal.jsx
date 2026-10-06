@@ -50,16 +50,22 @@ export default function AdminPanelModal({
 
   const handleConceptTypeChange = (type) => {
     let amount = customLinkData.customAmount;
+    let autoDiplomado = customLinkData.diplomado;
+
     if (type === 'PROGRAMA COMPLETO') amount = 540;
     else if (type === 'PROGRAMA FULL') amount = 900;
     else if (type === 'PROGRAMA ILIMITADO') amount = 1500;
-    else if (type === 'CURSO IA DE 0 A 100') amount = 149;
+    else if (type === 'CURSO IA DE 0 A 100') {
+      amount = 149;
+      autoDiplomado = 'CURSO DE IA DE 0 A 100';
+    }
     else if (type === 'OTROS') amount = 120;
 
     setCustomLinkData({
       ...customLinkData,
       conceptType: type,
       customAmount: amount,
+      diplomado: autoDiplomado
     });
   };
 
@@ -250,10 +256,10 @@ export default function AdminPanelModal({
                   onChange={(e) => handleConceptTypeChange(e.target.value)}
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-semibold text-xs focus:outline-none focus:border-amber-400 cursor-pointer"
                 >
-                  <option value="PROGRAMA COMPLETO">PROGRAMA COMPLETO (S/ 540)</option>
-                  <option value="PROGRAMA FULL">PROGRAMA FULL (S/ 900)</option>
-                  <option value="PROGRAMA ILIMITADO">PROGRAMA ILIMITADO (S/ 1500)</option>
-                  <option value="CURSO IA DE 0 A 100">CURSO IA DE 0 A 100 (S/ 149)</option>
+                  <option value="PROGRAMA COMPLETO">PROGRAMA COMPLETO</option>
+                  <option value="PROGRAMA FULL">PROGRAMA FULL</option>
+                  <option value="PROGRAMA ILIMITADO">PROGRAMA ILIMITADO</option>
+                  <option value="CURSO IA DE 0 A 100">CURSO IA DE 0 A 100</option>
                   <option value="OTROS">OTROS (Escribir concepto manual)</option>
                 </select>
               </div>

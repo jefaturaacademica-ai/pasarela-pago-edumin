@@ -208,6 +208,10 @@ export default function IzipayCheckoutModal({
         }
       }
 
+      if ((!diplomadoToSet || diplomadoToSet.trim() === '') && packageName.toUpperCase().includes('CURSO IA')) {
+        diplomadoToSet = 'CURSO DE IA DE 0 A 100';
+      }
+
       setStudentFirstName(firstNameToSet);
       setStudentLastName(lastNameToSet);
       setStudentDni(dniToSet);
