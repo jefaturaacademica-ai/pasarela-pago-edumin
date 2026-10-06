@@ -78,6 +78,23 @@ export default function App() {
         { text: 'CERTIFICACIÓN INTERNACIONAL: CERTIFICACIÓN INTERNACIONAL CON VALIDEZ GLOBAL EN UN DIPLOMADO DE TU ELECCIÓN (VÁLIDO PARA 1 DIPLOMADO)', included: true },
       ],
     },
+    {
+      id: 'curso_ia',
+      title: 'CURSO IA DE 0 A 100',
+      badgeBg: 'bg-[#7c4dff]',
+      basePrice: 149,
+      originalPrice: 500,
+      note: 'CURSO ASINCRÓNICO DE INTELIGENCIA ARTIFICIAL APLICADA',
+      cuotaOptions: [],
+      items: [
+        { text: 'ACCESO COMPLETO AL CURSO DE IA DE 0 A 100', included: true },
+        { text: 'CERTIFICADO DE FINALIZACIÓN Y PARTICIPACIÓN EDUMIN', included: true },
+        { text: 'PROMPTS, HERRAMIENTAS Y GUÍAS DESCARGABLES', included: true },
+        { text: 'ACCESO A AULA VIRTUAL Q10', included: true },
+        { text: 'ACCESO A BOLSA DE TRABAJO REGULAR', included: true },
+        { text: 'ASISTENCIA Y SOPORTE PERMANENTE POR WHATSAPP', included: true },
+      ],
+    },
   ];
 
   // Shopping Cart State
@@ -385,7 +402,7 @@ export default function App() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
             {packages.map((pkg) => (
               <div key={pkg.id} id={`package-${pkg.id}`} className="scroll-mt-28 flex flex-col">
                 <PackageCard

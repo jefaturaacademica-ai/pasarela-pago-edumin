@@ -141,6 +141,31 @@ export default function HeaderBanner({ onOpenAdminPanel }) {
               </div>
             </button>
 
+            {/* Package 4: Curso IA de 0 a 100 */}
+            <button
+              onClick={() => scrollToPackage('curso_ia')}
+              className="snap-center shrink-0 w-[240px] sm:w-[220px] bg-slate-900/95 hover:bg-slate-800 border border-slate-700/90 hover:border-[#7c4dff]/60 p-3.5 rounded-2xl transition-all shadow-xl cursor-pointer group text-left space-y-2 active:scale-95"
+            >
+              <div className="flex items-center justify-between">
+                <span className="px-2.5 py-0.5 rounded-full bg-[#7c4dff] text-white text-[10px] font-black uppercase shadow-xs">
+                  CURSO IA
+                </span>
+                <span className="text-[10px] text-slate-400 font-bold">IA de 0 a 100</span>
+              </div>
+              <div>
+                <p className="text-xs font-black text-white group-hover:text-[#7c4dff] transition-colors">
+                  CURSO IA DE 0 A 100
+                </p>
+                <p className="text-sm font-black font-mono text-amber-400">
+                  S/ 149 <span className="text-[10px] text-slate-400 font-normal font-sans">al contado</span>
+                </p>
+              </div>
+              <div className="pt-1 flex items-center justify-between text-[11px] font-bold text-slate-300 group-hover:text-white border-t border-slate-800">
+                <span>Ir al paquete</span>
+                <span className="text-[#7c4dff]">➔</span>
+              </div>
+            </button>
+
           </div>
         </div>
 

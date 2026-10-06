@@ -53,6 +53,7 @@ export default function AdminPanelModal({
     if (type === 'PROGRAMA COMPLETO') amount = 540;
     else if (type === 'PROGRAMA FULL') amount = 900;
     else if (type === 'PROGRAMA ILIMITADO') amount = 1500;
+    else if (type === 'CURSO IA DE 0 A 100') amount = 149;
     else if (type === 'OTROS') amount = 120;
 
     setCustomLinkData({
@@ -252,6 +253,7 @@ export default function AdminPanelModal({
                   <option value="PROGRAMA COMPLETO">PROGRAMA COMPLETO (S/ 540)</option>
                   <option value="PROGRAMA FULL">PROGRAMA FULL (S/ 900)</option>
                   <option value="PROGRAMA ILIMITADO">PROGRAMA ILIMITADO (S/ 1500)</option>
+                  <option value="CURSO IA DE 0 A 100">CURSO IA DE 0 A 100 (S/ 149)</option>
                   <option value="OTROS">OTROS (Escribir concepto manual)</option>
                 </select>
               </div>

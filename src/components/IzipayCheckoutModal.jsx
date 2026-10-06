@@ -314,8 +314,7 @@ export default function IzipayCheckoutModal({
           if (window.KR && typeof window.KR.setFormConfig === 'function') {
             window.KR.setFormConfig({
               'kr-form-token': tokenRes.formToken,
-              'kr-public-key': pKey,
-              'kr-post-url-success': window.location.origin + '/payment-success'
+              'kr-public-key': pKey
             });
 
             // Listen to form submit start event in Krypton SDK
