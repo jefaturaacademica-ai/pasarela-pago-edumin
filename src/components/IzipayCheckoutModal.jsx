@@ -811,7 +811,7 @@ export default function IzipayCheckoutModal({
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        placeholder="Ej. EDUMIN-IA-50"
+                        placeholder="Ingresa tu cupón"
                         value={couponCodeInput}
                         onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
                         className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 uppercase focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
@@ -958,40 +958,42 @@ export default function IzipayCheckoutModal({
                     </div>
                   </div>
 
-                  {/* COLLAPSIBLE ACCORDION 1: BENEFICIOS DE LA MATRÍCULA */}
-                  <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
-                    <button
-                      type="button"
-                      onClick={() => setShowBenefits(!showBenefits)}
-                      className="w-full px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-bold flex items-center justify-between transition-colors cursor-pointer"
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <BookOpen className="w-3.5 h-3.5 text-[#00a499]" />
-                        🎁 Beneficios Incluidos en tu Matrícula
-                      </span>
-                      {showBenefits ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
-                    </button>
-                    {showBenefits && (
-                      <div className="p-3 text-xs space-y-2 bg-slate-50/50 animate-fadeIn border-t border-slate-200">
-                        <div className="flex items-start space-x-2">
-                          <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
-                          <span className="text-slate-700"><strong>Diploma de Especialización:</strong> Emitido con código de verificación QR.</span>
+                  {/* COLLAPSIBLE ACCORDION 1: BENEFICIOS DE LA MATRÍCULA (DIPLOMADOS ONLY) */}
+                  {!(packageName.toUpperCase().includes('CURSO IA') || studentDiplomado.toUpperCase().includes('CURSO IA')) && (
+                    <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
+                      <button
+                        type="button"
+                        onClick={() => setShowBenefits(!showBenefits)}
+                        className="w-full px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-bold flex items-center justify-between transition-colors cursor-pointer"
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <BookOpen className="w-3.5 h-3.5 text-[#00a499]" />
+                          🎁 Beneficios Incluidos en tu Matrícula
+                        </span>
+                        {showBenefits ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
+                      </button>
+                      {showBenefits && (
+                        <div className="p-3 text-xs space-y-2 bg-slate-50/50 animate-fadeIn border-t border-slate-200">
+                          <div className="flex items-start space-x-2">
+                            <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                            <span className="text-slate-700"><strong>Diploma de Especialización:</strong> Emitido con código de verificación QR.</span>
+                          </div>
+                          <div className="flex items-start space-x-2">
+                            <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                            <span className="text-slate-700"><strong>Respaldo CIP & RECCIP:</strong> Valor académico válido para concursos públicos.</span>
+                          </div>
+                          <div className="flex items-start space-x-2">
+                            <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                            <span className="text-slate-700"><strong>Aula Virtual Q10 24/7:</strong> Acceso a clases grabadas en HD y plantillas.</span>
+                          </div>
+                          <div className="flex items-start space-x-2">
+                            <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                            <span className="text-slate-700"><strong>Bolsa de Trabajo Activa:</strong> Oportunidades laborales exclusivas EDUMIN.</span>
+                          </div>
                         </div>
-                        <div className="flex items-start space-x-2">
-                          <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
-                          <span className="text-slate-700"><strong>Respaldo CIP & RECCIP:</strong> Valor académico válido para concursos públicos.</span>
-                        </div>
-                        <div className="flex items-start space-x-2">
-                          <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
-                          <span className="text-slate-700"><strong>Aula Virtual Q10 24/7:</strong> Acceso a clases grabadas en HD y plantillas.</span>
-                        </div>
-                        <div className="flex items-start space-x-2">
-                          <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
-                          <span className="text-slate-700"><strong>Bolsa de Trabajo Activa:</strong> Oportunidades laborales exclusivas EDUMIN.</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* COLLAPSIBLE ACCORDION 2: CRONOGRAMA / PLAN DE PAGO */}
                   <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
