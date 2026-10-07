@@ -1018,30 +1018,6 @@ export default function IzipayCheckoutModal({
                             🎉 ¡Al realizar este pago cancelas el 100% del valor del programa! <strong>Saldo pendiente futuro: S/ 0.00 PEN.</strong>
                           </p>
                         </div>
-
-                        {/* OPCION 2: REFERENCIA DE FRACCIONAMIENTO EN CUOTAS SI APLICA */}
-                        <div className="p-2.5 bg-white border border-slate-200 rounded-xl space-y-1.5">
-                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                            📌 Referencia si financias en 3 cuotas mensuales:
-                          </span>
-                          <div className="space-y-1 font-mono text-[11px]">
-                            <div className="flex justify-between text-slate-700">
-                              <span>• Cuota 1 (Hoy):</span>
-                              <span className="font-bold text-slate-900">S/ {Math.round(activeAmount / 3)}.00 PEN</span>
-                            </div>
-                            <div className="flex justify-between text-slate-600">
-                              <span>• Cuota 2 (A los 30 días):</span>
-                              <span>S/ {Math.round(activeAmount / 3)}.00 PEN</span>
-                            </div>
-                            <div className="flex justify-between text-slate-600">
-                              <span>• Cuota 3 (A los 60 días):</span>
-                              <span>S/ {activeAmount - (Math.round(activeAmount / 3) * 2)}.00 PEN</span>
-                            </div>
-                          </div>
-                          <span className="text-[10px] text-slate-400 block pt-1 border-t border-slate-100">
-                            Total acumulado del programa: S/ {activeAmount}.00 PEN
-                          </span>
-                        </div>
                       </div>
                     )}
                   </div>
