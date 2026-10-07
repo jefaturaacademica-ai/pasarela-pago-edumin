@@ -268,9 +268,15 @@ export default function IzipayCheckoutModal({
     return `https://wa.me/51951101765?text=${encodeURIComponent(message)}`;
   };
 
-  // Reset state and generate fresh orderNumber whenever modal is opened
+  // Ref to track modal open transition to prevent resetting state on parent re-renders
+  const prevIsOpenRef = useRef(false);
+
+  // Reset state and generate fresh orderNumber ONLY when modal is opened (closed -> open)
   useEffect(() => {
-    if (isOpen) {
+    const isOpening = isOpen && !prevIsOpenRef.current;
+    prevIsOpenRef.current = isOpen;
+
+    if (isOpening) {
       setOrderNumber('171866' + Math.floor(1000 + Math.random() * 9000));
       setPaid(false);
       setIsProcessingPayment(false);
@@ -519,8 +525,8 @@ export default function IzipayCheckoutModal({
 
     const handlePaymentClickOrSubmit = (e) => {
       const target = e.target;
-      if (target && (target.closest('.kr-payment-button') || target.closest('button.kr-payment-button'))) {
-        // Krypton SDK onFormSubmit handles triggering isProcessingPayment when valid
+      if (target && (target.closest('.kr-payment-button') || target.closest('button') || target.closest('form'))) {
+        setIsProcessingPayment(true);
       }
     };
 
