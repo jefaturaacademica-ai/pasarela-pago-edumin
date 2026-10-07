@@ -382,7 +382,7 @@ export default function IzipayCheckoutModal({
       diplomado: studentDiplomado.trim()
     }));
 
-    setIsProcessingPayment(true);
+    setIsProcessingPayment(false);
     setStep('payment');
   };
 
@@ -394,6 +394,7 @@ export default function IzipayCheckoutModal({
     setLoadingToken(true);
     setErrorMessage(null);
     setFormToken(null);
+    setIsProcessingPayment(false);
 
     // Clean previous forms from Krypton SDK if present
     if (window.KR && typeof window.KR.removeForms === 'function') {
@@ -500,6 +501,7 @@ export default function IzipayCheckoutModal({
       } finally {
         if (isMounted) {
           setLoadingToken(false);
+          setIsProcessingPayment(false);
         }
       }
     };
