@@ -510,7 +510,7 @@ export default function App() {
             {packages
               .filter((pkg) => pkg.category === activeCategory)
               .map((pkg) => (
-                <div key={pkg.id} id={`package-${pkg.id}`} className="scroll-mt-28 flex flex-col w-full">
+                <div key={pkg.id} id={`package-${pkg.id}`} className="scroll-mt-28 flex flex-col w-full h-full">
                   <PackageCard
                     packageData={pkg}
                     onAddToCart={handleAddToCart}

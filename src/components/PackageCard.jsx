@@ -16,10 +16,10 @@ export default function PackageCard({
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200 shadow-xl flex flex-col justify-between overflow-hidden group hover:border-slate-300 hover:shadow-2xl transition-all duration-300 font-['Plus_Jakarta_Sans',sans-serif]">
+    <div className="bg-white rounded-3xl border border-slate-200 shadow-xl flex flex-col justify-between overflow-hidden group hover:border-slate-300 hover:shadow-2xl transition-all duration-300 font-['Plus_Jakarta_Sans',sans-serif] h-full">
       
       {/* Top Header Badge */}
-      <div className="p-6 text-center border-b border-slate-100 bg-slate-900 text-white relative">
+      <div className="p-6 text-center border-b border-slate-100 bg-slate-900 text-white relative shrink-0">
         <div className={`inline-block px-5 py-2 rounded-full text-sm font-black uppercase tracking-wider text-slate-950 shadow-md ${badgeBg}`}>
           {title}
         </div>
@@ -40,23 +40,25 @@ export default function PackageCard({
       </div>
 
       {/* Feature Items List */}
-      <div className="p-6 space-y-3.5 flex-1 text-xs text-slate-700 bg-slate-50/50">
-        {items.map((item, idx) => (
-          <div key={idx} className="flex items-start space-x-2.5">
-            {item.included ? (
-              <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5 font-bold">
-                <Check className="w-3 h-3 stroke-[3]" />
-              </div>
-            ) : (
-              <div className="w-4 h-4 rounded-full bg-rose-500/20 text-rose-500 flex items-center justify-center shrink-0 mt-0.5 font-bold">
-                <X className="w-3 h-3 stroke-[3]" />
-              </div>
-            )}
-            <span className={item.included ? 'text-slate-800 font-medium' : 'text-slate-400 line-through'}>
-              {item.text}
-            </span>
-          </div>
-        ))}
+      <div className="p-6 space-y-3.5 flex-1 flex flex-col justify-between text-xs text-slate-700 bg-slate-50/50">
+        <div className="space-y-3.5">
+          {items.map((item, idx) => (
+            <div key={idx} className="flex items-start space-x-2.5">
+              {item.included ? (
+                <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5 font-bold">
+                  <Check className="w-3 h-3 stroke-[3]" />
+                </div>
+              ) : (
+                <div className="w-4 h-4 rounded-full bg-rose-500/20 text-rose-500 flex items-center justify-center shrink-0 mt-0.5 font-bold">
+                  <X className="w-3 h-3 stroke-[3]" />
+                </div>
+              )}
+              <span className={item.included ? 'text-slate-800 font-medium' : 'text-slate-400 line-through'}>
+                {item.text}
+              </span>
+            </div>
+          ))}
+        </div>
 
         {note && (
           <div className="mt-3 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold">
@@ -65,8 +67,8 @@ export default function PackageCard({
         )}
       </div>
 
-      {/* Actions: Add to Cart & Direct Izipay Checkout */}
-      <div className="p-6 pt-3 bg-white space-y-2 border-t border-slate-100">
+      {/* Actions: Add to Cart & Direct Izipay Checkout (PERFECTLY ALIGNED AT BOTTOM) */}
+      <div className="p-6 pt-3 bg-white space-y-2 border-t border-slate-100 mt-auto shrink-0">
         
         <div className="grid grid-cols-2 gap-2">
           {/* Add to Cart */}
@@ -89,12 +91,11 @@ export default function PackageCard({
         </div>
 
         {/* Cuotas via WhatsApp */}
-        <div className="space-y-1.5 pt-1">
-          {cuotaOptions.map((opt, idx) => (
+        <div className="pt-1">
+          {cuotaOptions && cuotaOptions.length > 0 ? (
             <button
-              key={idx}
-              onClick={() => handleRequestCuotasWhatsApp(opt)}
-              className="w-full py-2.5 px-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition-colors flex items-center justify-between cursor-pointer border border-emerald-500/40 shadow-sm"
+              onClick={() => handleRequestCuotasWhatsApp(cuotaOptions[0])}
+              className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition-colors flex items-center justify-between cursor-pointer border border-emerald-500/40 shadow-sm"
             >
               <div className="flex items-center space-x-2">
                 <img 
@@ -102,13 +103,17 @@ export default function PackageCard({
                   alt="WhatsApp Logo" 
                   className="w-4 h-4 rounded-full object-cover shrink-0 shadow-sm"
                 />
-                <span>Solicitar Cuotas ({opt.count} x S/ {opt.amount})</span>
+                <span>Solicitar cuotas</span>
               </div>
-              <span className="bg-[#0f172a] text-amber-400 px-2 py-0.5 rounded-lg text-[10px] font-black border border-slate-700 flex items-center gap-1">
-                WhatsApp 📱
+              <span className="bg-[#0f172a] text-amber-400 px-2 py-0.5 rounded-lg text-[10px] font-black border border-slate-700">
+                WhatsApp
               </span>
             </button>
-          ))}
+          ) : (
+            <div className="h-[38px] flex items-center justify-center text-[10px] font-bold text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+              ⚡ Pago Único de Contado
+            </div>
+          )}
         </div>
 
       </div>
