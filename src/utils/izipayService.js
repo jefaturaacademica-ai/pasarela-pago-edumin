@@ -108,7 +108,6 @@ export function loadIzipayScript(publicKey = IZIPAY_CONFIG.prodPublicKey) {
     script.id = 'izipay-kr-sdk';
     script.src = IZIPAY_CONFIG.jsClientUrl;
     script.setAttribute('kr-public-key', publicKey);
-    script.setAttribute('kr-post-url-success', window.location.origin + '/payment-success');
 
     script.onload = () => resolve(window.KR);
     script.onerror = (err) => reject(err);
