@@ -17,7 +17,13 @@ import {
   Edit2,
   GraduationCap,
   Clock,
-  Sparkles
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+  Award,
+  BookOpen,
+  Calendar,
+  Check
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { createIzipayPaymentToken, loadIzipayScript, IZIPAY_CONFIG } from '../utils/izipayService';
@@ -89,6 +95,10 @@ export default function IzipayCheckoutModal({
   const [studentPhone, setStudentPhone] = useState('');
   const [studentDiplomado, setStudentDiplomado] = useState('');
   const [formValidationError, setFormValidationError] = useState('');
+
+  // Accordion UI States for Benefits and Cronograma
+  const [showBenefits, setShowBenefits] = useState(false);
+  const [showCronograma, setShowCronograma] = useState(false);
 
   // Invoice type: 'boleta' | 'factura'
   const [invoiceType, setInvoiceType] = useState('boleta');
@@ -872,6 +882,89 @@ export default function IzipayCheckoutModal({
                       onChange={(e) => setStudentPhone(e.target.value)}
                       className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#00a499] focus:border-[#00a499] outline-none transition-all shadow-sm"
                     />
+                  </div>
+
+                  {/* TRUST BADGES & GUARANTEE BANNER */}
+                  <div className="pt-2 border-t border-slate-200 grid grid-cols-2 gap-2 text-[10px]">
+                    <div className="p-2 bg-emerald-50/80 border border-emerald-200 rounded-xl flex items-center space-x-2 text-emerald-900 font-bold">
+                      <Award className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>Aval Oficial CIP & RECCIP</span>
+                    </div>
+                    <div className="p-2 bg-blue-50/80 border border-blue-200 rounded-xl flex items-center space-x-2 text-blue-900 font-bold">
+                      <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
+                      <span>Pago Seguro SSL 256-bit</span>
+                    </div>
+                  </div>
+
+                  {/* COLLAPSIBLE ACCORDION 1: BENEFICIOS DE LA MATRÍCULA */}
+                  <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
+                    <button
+                      type="button"
+                      onClick={() => setShowBenefits(!showBenefits)}
+                      className="w-full px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-bold flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <BookOpen className="w-3.5 h-3.5 text-[#00a499]" />
+                        🎁 Beneficios Incluidos en tu Matrícula
+                      </span>
+                      {showBenefits ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
+                    </button>
+                    {showBenefits && (
+                      <div className="p-3 text-xs space-y-2 bg-slate-50/50 animate-fadeIn border-t border-slate-200">
+                        <div className="flex items-start space-x-2">
+                          <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                          <span className="text-slate-700"><strong>Diploma de Especialización:</strong> Emitido con código de verificación QR.</span>
+                        </div>
+                        <div className="flex items-start space-x-2">
+                          <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                          <span className="text-slate-700"><strong>Respaldo CIP & RECCIP:</strong> Valor académico válido para concursos públicos.</span>
+                        </div>
+                        <div className="flex items-start space-x-2">
+                          <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                          <span className="text-slate-700"><strong>Aula Virtual Q10 24/7:</strong> Acceso a clases grabadas en HD y plantillas.</span>
+                        </div>
+                        <div className="flex items-start space-x-2">
+                          <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                          <span className="text-slate-700"><strong>Bolsa de Trabajo Activa:</strong> Oportunidades laborales exclusivas EDUMIN.</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* COLLAPSIBLE ACCORDION 2: CRONOGRAMA INTERACTIVO DE CUOTAS */}
+                  <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
+                    <button
+                      type="button"
+                      onClick={() => setShowCronograma(!showCronograma)}
+                      className="w-full px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-bold flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-amber-500" />
+                        🗓️ Cronograma Estimado de Cuotas
+                      </span>
+                      {showCronograma ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
+                    </button>
+                    {showCronograma && (
+                      <div className="p-3 text-xs space-y-2 bg-amber-50/30 animate-fadeIn border-t border-slate-200">
+                        <p className="text-[11px] text-slate-600 font-medium">
+                          Desglose sugerido del pago para el programa seleccionado:
+                        </p>
+                        <div className="space-y-1.5 font-mono text-[11px]">
+                          <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-lg flex justify-between items-center text-emerald-950 font-bold">
+                            <span>Cuota 1 (Hoy):</span>
+                            <span>S/ {activeAmount}.00 PEN</span>
+                          </div>
+                          <div className="p-2 bg-white border border-slate-200 rounded-lg flex justify-between items-center text-slate-700">
+                            <span>Cuota 2 (30 días):</span>
+                            <span>S/ {Math.round(activeAmount * 0.5)}.00 PEN</span>
+                          </div>
+                          <div className="p-2 bg-white border border-slate-200 rounded-lg flex justify-between items-center text-slate-700">
+                            <span>Cuota 3 (60 días):</span>
+                            <span>S/ {Math.round(activeAmount * 0.5)}.00 PEN</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* FORM VALIDATION WARNING */}

@@ -33,6 +33,7 @@ export default function AdminPanelModal({
   const [activeTab, setActiveTab] = useState('custom_link'); // 'custom_link' | 'payments' | 'history'
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('all'); // 'all' | 'today' | 'week' | 'month'
+  const [copiedTemplate, setCopiedTemplate] = useState(false);
 
   // Helper to export data rows to CSV file
   const handleExportCSV = (filename, headers, rows) => {
@@ -431,14 +432,39 @@ export default function AdminPanelModal({
                 {generatedLink}
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <button
                   type="button"
                   onClick={handleCopy}
                   className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center justify-center space-x-1 cursor-pointer"
                 >
                   {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-blue-400" />}
-                  <span>{copied ? 'Copiado' : 'Copiar'}</span>
+                  <span>{copied ? 'Link Copiado' : 'Copiar Link'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const client = currentCreatedPlan?.clientName || 'Estimado Alumno';
+                    const pkg = currentCreatedPlan?.packageName || customLinkData.conceptType;
+                    const amount = currentCreatedPlan?.cuotaAmount || customLinkData.customAmount;
+                    
+                    const template = `🎓 *INSTITUTO EDUMIN - ENLACE OFICIAL DE MATRÍCULA*\n\n` +
+                      `Hola *${client}*, te compartimos tu enlace de pago subvencionado al 70% por RECCIP Latinoamérica:\n\n` +
+                      `📚 *Programa:* ${pkg}\n` +
+                      `💳 *Monto a Pagar:* S/ ${amount}.00 PEN\n` +
+                      `⏱️ *Vigencia:* Enlace único válido por 24 horas\n\n` +
+                      `👉 *Realiza tu pago seguro aquí:*\n${generatedLink}\n\n` +
+                      `_Al completar tu pago, el sistema registrará tu vacante e iniciará tu alta en el Aula Q10._`;
+
+                    navigator.clipboard.writeText(template);
+                    setCopiedTemplate(true);
+                    setTimeout(() => setCopiedTemplate(false), 2500);
+                  }}
+                  className="py-2 px-3 rounded-xl bg-purple-900/80 hover:bg-purple-800 text-purple-200 text-xs font-bold flex items-center justify-center space-x-1 cursor-pointer border border-purple-500/40"
+                >
+                  {copiedTemplate ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Sparkles className="w-3.5 h-3.5 text-amber-400" />}
+                  <span>{copiedTemplate ? '¡Copiado!' : 'Plantilla WA'}</span>
                 </button>
 
                 <button
