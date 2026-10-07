@@ -1,8 +1,8 @@
 // Vercel Serverless Function: Coupon Validation & State API
 
 let serverCoupons = [
-  { code: 'EDUMIN-IA-50', discount: 50, isUsed: false },
-  { code: 'EDUMIN-IA-30', discount: 30, isUsed: false },
+  { code: 'EDUMIN-IA-50', discount: 50, isUsed: true },
+  { code: 'EDUMIN-IA-30', discount: 30, isUsed: true },
   { code: 'RECCIP-100', discount: 100, isUsed: false }
 ];
 
