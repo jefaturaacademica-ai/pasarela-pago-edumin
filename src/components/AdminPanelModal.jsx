@@ -13,12 +13,14 @@ import {
   GraduationCap,
   FileSpreadsheet,
   Download,
-  Search
+  Search,
+  Tag
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { generatePaymentSignature } from '../utils/securityUtils';
 import { DIPLOMADOS_LIST } from '../utils/diplomadosData';
 import { textMatches } from '../utils/stringUtils';
+import { getCoupons, createCoupon } from '../utils/couponUtils';
 
 export default function AdminPanelModal({ 
   isOpen, 
@@ -30,10 +32,31 @@ export default function AdminPanelModal({
   onUpdateInstallmentStatus,
   onPreviewStudentCheckout
 }) {
-  const [activeTab, setActiveTab] = useState('custom_link'); // 'custom_link' | 'payments' | 'history'
+  const [activeTab, setActiveTab] = useState('custom_link'); // 'custom_link' | 'payments' | 'history' | 'coupons'
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('all'); // 'all' | 'today' | 'week' | 'month'
   const [copiedTemplate, setCopiedTemplate] = useState(false);
+
+  // Coupon Management State
+  const [couponsList, setCouponsList] = useState(getCoupons());
+  const [newCouponCode, setNewCouponCode] = useState('');
+  const [newCouponDiscount, setNewCouponDiscount] = useState(50);
+  const [newCouponDesc, setNewCouponDesc] = useState('');
+  const [couponCreateMsg, setCouponCreateMsg] = useState('');
+
+  const handleCreateCoupon = (e) => {
+    e.preventDefault();
+    const res = createCoupon(newCouponCode, newCouponDiscount, newCouponDesc);
+    if (res.success) {
+      setCouponsList(getCoupons());
+      setNewCouponCode('');
+      setNewCouponDesc('');
+      setCouponCreateMsg('✅ Cupón único creado exitosamente.');
+      setTimeout(() => setCouponCreateMsg(''), 3000);
+    } else {
+      setCouponCreateMsg(`❌ ${res.error}`);
+    }
+  };
 
   // Helper to export data rows to CSV file
   const handleExportCSV = (filename, headers, rows) => {
@@ -264,6 +287,18 @@ export default function AdminPanelModal({
           >
             <History className="w-4 h-4" />
             <span>📜 Historial de Links</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('coupons')}
+            className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+              activeTab === 'coupons'
+                ? 'bg-purple-500 text-white shadow-md font-extrabold'
+                : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
+            }`}
+          >
+            <Tag className="w-4 h-4 text-purple-300" />
+            <span>🎟️ Cupones Únicos</span>
           </button>
         </div>
 
@@ -678,6 +713,105 @@ export default function AdminPanelModal({
                 </button>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* TAB 5: GESTIÓN DE CUPONES ÚNICOS */}
+        {activeTab === 'coupons' && (
+          <div className="space-y-5 text-xs animate-fadeIn">
+            {/* Create Coupon Form */}
+            <form onSubmit={handleCreateCoupon} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
+              <div className="flex items-center space-x-2 text-purple-400 font-bold border-b border-slate-800 pb-2">
+                <Tag className="w-4 h-4 text-purple-400" />
+                <h4 className="text-sm font-extrabold text-white">Crear Nuevo Cupón Único</h4>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300">Código del Cupón:</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej. IA149-PROMO"
+                    value={newCouponCode}
+                    onChange={(e) => setNewCouponCode(e.target.value.toUpperCase())}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono font-bold uppercase focus:border-purple-400 outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300">Descuento (S/):</label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    placeholder="50"
+                    value={newCouponDiscount}
+                    onChange={(e) => setNewCouponDiscount(Number(e.target.value))}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-amber-400 font-mono font-bold focus:border-purple-400 outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300">Descripción / Alumno:</label>
+                  <input
+                    type="text"
+                    placeholder="Beca Especial Juan Pérez"
+                    value={newCouponDesc}
+                    onChange={(e) => setNewCouponDesc(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 focus:border-purple-400 outline-none"
+                  />
+                </div>
+              </div>
+
+              {couponCreateMsg && (
+                <p className="text-xs font-bold text-purple-300">{couponCreateMsg}</p>
+              )}
+
+              <button
+                type="submit"
+                className="w-full py-2.5 px-4 bg-purple-600 hover:bg-purple-500 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition-all cursor-pointer"
+              >
+                Generar Cupón Único
+              </button>
+            </form>
+
+            {/* List of Existing Coupons */}
+            <div className="space-y-2">
+              <h4 className="font-extrabold text-white text-xs flex items-center justify-between">
+                <span>Lista de Cupones Registrados ({couponsList.length})</span>
+                <span className="text-[10px] text-slate-400">Validados automáticamente en checkout</span>
+              </h4>
+
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {couponsList.map((c, idx) => (
+                  <div key={idx} className="p-3 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between text-xs">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-black text-amber-400 text-sm">{c.code}</span>
+                        <span className="px-2 py-0.5 bg-purple-900/60 text-purple-200 text-[10px] font-bold rounded-full border border-purple-500/30">
+                          - S/ {c.discount}.00 PEN
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">{c.description || 'Sin descripción'}</p>
+                    </div>
+
+                    <div className="text-right">
+                      {c.isUsed ? (
+                        <span className="px-2.5 py-1 bg-rose-950 text-rose-300 text-[10px] font-bold rounded-full border border-rose-800 block">
+                          🔴 Canjeado por DNI {c.usedBy}
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-1 bg-emerald-950 text-emerald-300 text-[10px] font-bold rounded-full border border-emerald-800 block">
+                          🟢 Disponible (Un solo uso)
+                        </span>
+                      )}
+                      {c.usedAt && <span className="text-[9px] text-slate-500 block pt-0.5">{c.usedAt}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 

@@ -23,13 +23,15 @@ import {
   Award,
   BookOpen,
   Calendar,
-  Check
+  Check,
+  Tag
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { createIzipayPaymentToken, loadIzipayScript, IZIPAY_CONFIG } from '../utils/izipayService';
 import { DIPLOMADOS_LIST } from '../utils/diplomadosData';
 import { printPaymentVoucher } from '../utils/voucherUtils';
 import { lookupDNI } from '../utils/dniUtils';
+import { validateCoupon, markCouponAsUsed } from '../utils/couponUtils';
 
 function splitName(fullNameStr = '') {
   const parts = fullNameStr.trim().split(/\s+/).filter(Boolean);
@@ -157,7 +159,31 @@ export default function IzipayCheckoutModal({
   // Custom amount state (allows admin to select S/ 1.00 test or full amount)
   const baseAmount = amount || 540;
   const [customAmount, setCustomAmount] = useState(null);
-  const activeAmount = (isAdminLoggedIn && customAmount !== null) ? customAmount : baseAmount;
+
+  // Single-use coupon state
+  const [couponCodeInput, setCouponCodeInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponMsg, setCouponMsg] = useState('');
+
+  const rawAmount = (isAdminLoggedIn && customAmount !== null) ? customAmount : baseAmount;
+  const discountVal = appliedCoupon ? appliedCoupon.discountAmount : 0;
+  const activeAmount = Math.max(1, rawAmount - discountVal);
+
+  const handleApplyCoupon = (e) => {
+    e?.preventDefault();
+    if (!couponCodeInput.trim()) {
+      setCouponMsg('⚠️ Ingresa un código de cupón.');
+      return;
+    }
+    const res = validateCoupon(couponCodeInput);
+    if (res.valid) {
+      setAppliedCoupon(res);
+      setCouponMsg(`✅ ¡Cupón de S/ ${res.discountAmount}.00 aplicado con éxito!`);
+    } else {
+      setAppliedCoupon(null);
+      setCouponMsg(`❌ ${res.error}`);
+    }
+  };
 
   // Fresh order number generated on every modal open or amount/mode change
   const [orderNumber, setOrderNumber] = useState('');
@@ -767,6 +793,42 @@ export default function IzipayCheckoutModal({
                         S/ {activeAmount}.00
                       </span>
                     </div>
+                  </div>
+
+                  {/* FIELD: CUPÓN DE DESCUENTO ÚNICO */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-700 uppercase flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        <Tag className="w-3.5 h-3.5 text-amber-500" />
+                        ¿Tienes un cupón de descuento?
+                      </span>
+                      {appliedCoupon && (
+                        <span className="text-[10px] text-emerald-600 font-bold">
+                          - S/ {appliedCoupon.discountAmount}.00 APLICADO
+                        </span>
+                      )}
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Ej. EDUMIN-IA-50"
+                        value={couponCodeInput}
+                        onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
+                        className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 uppercase focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyCoupon}
+                        className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer transition-all shrink-0"
+                      >
+                        Aplicar
+                      </button>
+                    </div>
+                    {couponMsg && (
+                      <p className={`text-[11px] font-bold ${appliedCoupon ? 'text-emerald-700' : 'text-rose-600'}`}>
+                        {couponMsg}
+                      </p>
+                    )}
                   </div>
 
                   {/* FIELD 1: DIPLOMADO SELECTION (HIDDEN FOR CURSO IA) */}
