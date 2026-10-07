@@ -431,7 +431,9 @@ export default function IzipayCheckoutModal({
           if (window.KR && typeof window.KR.setFormConfig === 'function') {
             window.KR.setFormConfig({
               'kr-form-token': tokenRes.formToken,
-              'kr-public-key': pKey
+              'kr-public-key': pKey,
+              'kr-post-url-success': null,
+              'kr-post-url-refused': null
             });
 
             // Listen to form submit start event in Krypton SDK
@@ -480,6 +482,8 @@ export default function IzipayCheckoutModal({
 
               // Notify n8n Webhook on rejection with detailed reason
               notifyN8n('REJECTED', errTxt, error);
+
+              return false;
             });
           }
         } else {
@@ -496,7 +500,6 @@ export default function IzipayCheckoutModal({
       } finally {
         if (isMounted) {
           setLoadingToken(false);
-          setIsProcessingPayment(false);
         }
       }
     };
@@ -514,8 +517,8 @@ export default function IzipayCheckoutModal({
 
     const handlePaymentClickOrSubmit = (e) => {
       const target = e.target;
-      if (target && (target.closest('.kr-payment-button') || target.closest('button') || target.closest('form'))) {
-        setIsProcessingPayment(true);
+      if (target && (target.closest('.kr-payment-button') || target.closest('button.kr-payment-button'))) {
+        // Krypton SDK onFormSubmit handles triggering isProcessingPayment when valid
       }
     };
 
@@ -1107,9 +1110,32 @@ export default function IzipayCheckoutModal({
                   /* REAL EMBEDDED IZIPAY SMART FORM CONTAINER */
                   <div className="space-y-4">
                     
-                    {/* Official Izipay Krypton Embedded Smart Form */}
+                    {/* DEDICATED INLINE PROCESSING VIEW WHEN TRANSACTION SUBMITTED */}
+                    {isProcessingPayment && (
+                      <div className="text-center py-10 px-4 space-y-4 bg-slate-50 border border-slate-200 rounded-2xl animate-fadeIn shadow-sm">
+                        <div className="relative w-16 h-16 mx-auto">
+                          <RefreshCw className="w-16 h-16 text-[#00a499] animate-spin stroke-[2]" />
+                          <CreditCard className="w-7 h-7 text-[#00a499] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                        </div>
+                        <div className="space-y-2 max-w-xs mx-auto">
+                          <h4 className="text-xl font-black text-slate-900 leading-tight">
+                            Procesando pago{dots}
+                          </h4>
+                          <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                            Estamos validando la transacción con tu banco emisor. Por favor espera un momento sin cerrar ni recargar la ventana.
+                          </p>
+                        </div>
+                        <div className="pt-1">
+                          <span className="px-3.5 py-1.5 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold inline-flex items-center gap-1.5 shadow-xs">
+                            <ShieldCheck className="w-4 h-4 text-emerald-600" /> Transacción Segura Izipay SSL
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Official Izipay Krypton Embedded Smart Form (Kept in DOM, hidden while processing) */}
                     {formToken && (
-                      <div className="p-4 sm:p-5 border border-slate-200 bg-white rounded-2xl shadow-sm space-y-3 w-full max-w-md mx-auto">
+                      <div className={`p-4 sm:p-5 border border-slate-200 bg-white rounded-2xl shadow-sm space-y-3 w-full max-w-md mx-auto ${isProcessingPayment ? 'hidden' : 'block'}`}>
                         <div className="flex items-center justify-between text-xs font-bold text-slate-800 border-b border-slate-100 pb-3">
                           <span className="flex items-center gap-1.5">
                             <CreditCard className="w-4 h-4 text-[#00a499]" />
@@ -1120,7 +1146,7 @@ export default function IzipayCheckoutModal({
                           </span>
                         </div>
 
-                        {/* OFFICIAL IZIPAY KR-EMBEDDED CONTAINER (CENTRADOS) */}
+                        {/* OFFICIAL IZIPAY KR-EMBEDDED CONTAINER */}
                         <div 
                           key={`${orderNumber}-${activeAmount}-${studentEmail}`}
                           ref={krContainerRef}
@@ -1140,19 +1166,6 @@ export default function IzipayCheckoutModal({
                           {/* Error messaging rendered by Izipay SDK */}
                           <div className="kr-form-error text-xs text-rose-600 font-bold mt-2 text-center w-full"></div>
                         </div>
-
-                        {/* ANIMATED PROCESSING BANNER DIRECTLY BELOW BUTTON */}
-                        {isProcessingPayment && (
-                          <div className="p-3.5 bg-amber-500/10 border border-amber-500/40 text-amber-950 rounded-xl text-xs space-y-1 text-center animate-fadeIn shadow-sm mt-3 w-full">
-                            <div className="flex items-center justify-center space-x-2 font-black text-amber-950 text-sm">
-                              <RefreshCw className="w-4 h-4 text-amber-600 animate-spin" />
-                              <span>Pago en proceso{dots}</span>
-                            </div>
-                            <p className="text-[11px] text-slate-700 font-medium">
-                              Estamos validando los datos con tu banco emisor. Por favor espera un momento.
-                            </p>
-                          </div>
-                        )}
                       </div>
                     )}
 
