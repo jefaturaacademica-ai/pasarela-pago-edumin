@@ -931,7 +931,7 @@ export default function IzipayCheckoutModal({
                     )}
                   </div>
 
-                  {/* COLLAPSIBLE ACCORDION 2: CRONOGRAMA INTERACTIVO DE CUOTAS */}
+                  {/* COLLAPSIBLE ACCORDION 2: CRONOGRAMA / PLAN DE PAGO */}
                   <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
                     <button
                       type="button"
@@ -940,28 +940,45 @@ export default function IzipayCheckoutModal({
                     >
                       <span className="flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5 text-amber-500" />
-                        🗓️ Cronograma Estimado de Cuotas
+                        🗓️ Estado de Pago & Cronograma de Cuotas
                       </span>
                       {showCronograma ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
                     </button>
                     {showCronograma && (
-                      <div className="p-3 text-xs space-y-2 bg-amber-50/30 animate-fadeIn border-t border-slate-200">
-                        <p className="text-[11px] text-slate-600 font-medium">
-                          Desglose sugerido del pago para el programa seleccionado:
-                        </p>
-                        <div className="space-y-1.5 font-mono text-[11px]">
-                          <div className="p-2 bg-emerald-50 border border-emerald-200 rounded-lg flex justify-between items-center text-emerald-950 font-bold">
-                            <span>Cuota 1 (Hoy):</span>
-                            <span>S/ {activeAmount}.00 PEN</span>
+                      <div className="p-3 text-xs space-y-2.5 bg-amber-50/30 animate-fadeIn border-t border-slate-200">
+                        {/* OPCION 1: PAGO ÚNICO CONTADO */}
+                        <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl space-y-1">
+                          <div className="flex justify-between items-center text-emerald-950 font-bold text-xs">
+                            <span>✅ Pago Único al Contado (Hoy):</span>
+                            <span className="font-mono text-emerald-700">S/ {activeAmount}.00 PEN</span>
                           </div>
-                          <div className="p-2 bg-white border border-slate-200 rounded-lg flex justify-between items-center text-slate-700">
-                            <span>Cuota 2 (30 días):</span>
-                            <span>S/ {Math.round(activeAmount * 0.5)}.00 PEN</span>
+                          <p className="text-[10px] text-emerald-800 font-medium">
+                            🎉 ¡Al realizar este pago cancelas el 100% del valor del programa! <strong>Saldo pendiente futuro: S/ 0.00 PEN.</strong>
+                          </p>
+                        </div>
+
+                        {/* OPCION 2: REFERENCIA DE FRACCIONAMIENTO EN CUOTAS SI APLICA */}
+                        <div className="p-2.5 bg-white border border-slate-200 rounded-xl space-y-1.5">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                            📌 Referencia si financias en 3 cuotas mensuales:
+                          </span>
+                          <div className="space-y-1 font-mono text-[11px]">
+                            <div className="flex justify-between text-slate-700">
+                              <span>• Cuota 1 (Hoy):</span>
+                              <span className="font-bold text-slate-900">S/ {Math.round(activeAmount / 3)}.00 PEN</span>
+                            </div>
+                            <div className="flex justify-between text-slate-600">
+                              <span>• Cuota 2 (A los 30 días):</span>
+                              <span>S/ {Math.round(activeAmount / 3)}.00 PEN</span>
+                            </div>
+                            <div className="flex justify-between text-slate-600">
+                              <span>• Cuota 3 (A los 60 días):</span>
+                              <span>S/ {activeAmount - (Math.round(activeAmount / 3) * 2)}.00 PEN</span>
+                            </div>
                           </div>
-                          <div className="p-2 bg-white border border-slate-200 rounded-lg flex justify-between items-center text-slate-700">
-                            <span>Cuota 3 (60 días):</span>
-                            <span>S/ {Math.round(activeAmount * 0.5)}.00 PEN</span>
-                          </div>
+                          <span className="text-[10px] text-slate-400 block pt-1 border-t border-slate-100">
+                            Total acumulado del programa: S/ {activeAmount}.00 PEN
+                          </span>
                         </div>
                       </div>
                     )}
