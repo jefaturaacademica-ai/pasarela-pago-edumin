@@ -505,12 +505,16 @@ export default function App() {
             </button>
           </div>
 
-          {/* Filtered Packages Grid */}
-          <div className={activeCategory === 'diplomado' ? "grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch max-w-6xl mx-auto" : "flex justify-center max-w-md mx-auto"}>
+          {/* Filtered Packages Grid with Mobile Snap Carousel */}
+          <div className={
+            activeCategory === 'diplomado' 
+              ? "flex sm:grid sm:grid-cols-3 gap-6 sm:gap-8 items-stretch max-w-6xl mx-auto overflow-x-auto sm:overflow-visible snap-x snap-mandatory pb-4 sm:pb-0 px-2 sm:px-0 -mx-2 sm:mx-auto" 
+              : "flex justify-center max-w-md mx-auto"
+          }>
             {packages
               .filter((pkg) => pkg.category === activeCategory)
               .map((pkg) => (
-                <div key={pkg.id} id={`package-${pkg.id}`} className="scroll-mt-28 flex flex-col w-full h-full">
+                <div key={pkg.id} id={`package-${pkg.id}`} className="scroll-mt-28 flex flex-col w-[88vw] sm:w-full shrink-0 sm:shrink snap-center h-full">
                   <PackageCard
                     packageData={pkg}
                     onAddToCart={handleAddToCart}
