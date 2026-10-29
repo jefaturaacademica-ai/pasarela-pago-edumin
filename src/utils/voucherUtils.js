@@ -88,9 +88,28 @@ export function printPaymentVoucher(txData) {
           </div>
 
           <div class="info-row">
+            <span class="info-label">Método de Pago:</span>
+            <span class="info-val" style="color: #00a499;">${txData.paymentMethod || 'Tarjeta de Crédito / Débito (Izipay)'}</span>
+          </div>
+
+          <div class="info-row">
             <span class="info-label">Comercio Emisor:</span>
             <span class="info-val">Instituto Técnico Avanza SAC</span>
           </div>
+
+          ${txData.codeAuth ? `
+          <div class="info-row">
+            <span class="info-label">Cód. Autorización (Izipay):</span>
+            <span class="info-val" style="color: #059669; font-family: monospace;">${txData.codeAuth}</span>
+          </div>
+          ` : ''}
+
+          ${txData.referenceNumber ? `
+          <div class="info-row">
+            <span class="info-label">N° de Referencia:</span>
+            <span class="info-val" style="font-family: monospace;">${txData.referenceNumber}</span>
+          </div>
+          ` : ''}
 
           <div class="info-row" style="border-bottom: none;">
             <span class="info-label">Fecha y Hora de Emisión:</span>

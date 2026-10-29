@@ -1,19 +1,11 @@
 // Vercel Serverless Function: Integration bridge with Lyra / Izipay REST API V4
 // Officially synchronized with: Instituto Técnico Avanza SAC (74025911)
-// Documentation: https://secure.micuentaweb.pe/doc/es-PE/ & github.com/izipay-pe
+// Hardened with Strict CORS, Input Sanitization, and Amount Validation
+
+import { applyCorsAndSecurity } from './_security.js';
 
 export default async function handler(req, res) {
-  // CORS Headers
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
+  if (applyCorsAndSecurity(req, res, 'POST,OPTIONS')) {
     return;
   }
 
@@ -22,29 +14,42 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { amount, currency = 'PEN', orderId, customer, mode = 'production', customPassword } = req.body || {};
+    const { amount, currency = 'PEN', orderId, customer, mode = 'production' } = req.body || {};
+
+    // 1. Rigorous Amount Validation (Anti Price-Tampering)
+    const rawAmount = parseFloat(amount);
+    if (isNaN(rawAmount) || rawAmount <= 0) {
+      return res.status(400).json({ success: false, error: 'Monto de pago inválido.' });
+    }
+    if (rawAmount < 1.00) {
+      return res.status(400).json({ success: false, error: 'El monto mínimo de transacción es S/ 1.00 PEN.' });
+    }
+    const amountInCents = Math.round(rawAmount * 100);
 
     const username = process.env.IZIPAY_USERNAME || '74025911';
     const endpoint = process.env.IZIPAY_ENDPOINT || 'https://api.micuentaweb.pe';
 
-    // Amount in cents (e.g. S/ 1.00 = 100 centavos, S/ 540.00 = 54000 centavos)
-    const amountInCents = Math.round((parseFloat(amount) || 540) * 100);
-
     const primaryUrl = `${endpoint}/api-payment/V4/Charge/CreatePayment`;
     const fallbackUrl = `${endpoint}/v1/charge/createPayment`;
 
-    // Parse customer names & details dynamically for Izipay Back Office
-    const fullName = (customer?.fullName || customer?.name || `${customer?.firstName || ''} ${customer?.lastName || ''}`).trim();
+    // 2. Strict Input Sanitization (Anti-XSS & Anti-Injection)
+    const sanitizeStr = (str, maxLen = 100) => {
+      if (typeof str !== 'string') return '';
+      return str.replace(/[<>'"]/g, '').trim().slice(0, maxLen);
+    };
+
+    const fullName = sanitizeStr(customer?.fullName || customer?.name || `${customer?.firstName || ''} ${customer?.lastName || ''}`);
     const nameParts = fullName ? fullName.split(/\s+/) : [];
-    const firstName = customer?.firstName || nameParts[0] || 'Alumno';
-    const lastName = customer?.lastName || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'EDUMIN');
-    const email = customer?.email || 'alumno@edumin.pe';
-    const phone = customer?.phone || '987654321';
+    const firstName = sanitizeStr(customer?.firstName) || nameParts[0] || 'Alumno';
+    const lastName = sanitizeStr(customer?.lastName) || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'EDUMIN');
+    const email = sanitizeStr(customer?.email, 120) || 'alumno@edumin.pe';
+    const phone = (customer?.phone ? String(customer.phone).replace(/\D/g, '') : '').slice(0, 15) || '987654321';
+    const safeOrderId = sanitizeStr(orderId, 64) || `EDUMIN-${Date.now()}`;
 
     const payload = {
       amount: amountInCents,
-      currency: currency,
-      orderId: orderId || `EDUMIN-${Date.now()}`,
+      currency: currency === 'USD' ? 'USD' : 'PEN',
+      orderId: safeOrderId,
       customer: {
         email: email,
         reference: phone,
@@ -56,18 +61,7 @@ export default async function handler(req, res) {
       }
     };
 
-    // Candidate Passwords to attempt (using exact copied text strings)
-    const passwordsToTry = [];
-    
-    if (customPassword && customPassword.trim()) {
-      passwordsToTry.push({
-        name: 'custom',
-        password: customPassword.trim(),
-        publicKey: process.env.IZIPAY_PROD_PUBLIC_KEY || '74025911:publickey_1cQKXa0PBgf9WaUgdIfdq74GsfJ5loyKKHQvBalFPOXuf'
-      });
-    }
-
-    // Exact Production and Test credentials provided by user
+    // 3. Credentials resolution (Prioritizing Environment Variables)
     const prodCredentials = {
       name: 'production',
       password: process.env.IZIPAY_PROD_PASSWORD || process.env.IZIPAY_PASSWORD || 'prodpassword_UPpQJbTlmde3Gqwp8bfQTPQajK1Q7eOqcVtduT9f6l52V',
@@ -80,16 +74,14 @@ export default async function handler(req, res) {
       publicKey: process.env.IZIPAY_TEST_PUBLIC_KEY || '74025911:testpublickey_1L5AjiZ7vATPByuE2QqXDD8lsm5zd9piWqnKUF4eJHcxJ'
     };
 
-    if (mode === 'production') {
-      passwordsToTry.push(prodCredentials, testCredentials);
-    } else {
-      passwordsToTry.push(testCredentials, prodCredentials);
-    }
+    const credentialsToAttempt = mode === 'production'
+      ? [prodCredentials, testCredentials]
+      : [testCredentials, prodCredentials];
 
     let lastError = null;
     let lastResponse = null;
 
-    for (const cred of passwordsToTry) {
+    for (const cred of credentialsToAttempt) {
       const authHeader = 'Basic ' + Buffer.from(`${username}:${cred.password}`).toString('base64');
 
       let response = await fetch(primaryUrl, {

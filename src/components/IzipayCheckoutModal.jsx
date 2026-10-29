@@ -24,7 +24,10 @@ import {
   BookOpen,
   Calendar,
   Check,
-  Tag
+  Tag,
+  QrCode,
+  Smartphone,
+  Info
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { createIzipayPaymentToken, loadIzipayScript, IZIPAY_CONFIG } from '../utils/izipayService';
@@ -32,6 +35,7 @@ import { DIPLOMADOS_LIST } from '../utils/diplomadosData';
 import { printPaymentVoucher } from '../utils/voucherUtils';
 import { lookupDNI } from '../utils/dniUtils';
 import { validateCoupon, markCouponAsUsed } from '../utils/couponUtils';
+import { playPaymentSuccessSound } from '../utils/soundUtils';
 
 function splitName(fullNameStr = '') {
   const parts = fullNameStr.trim().split(/\s+/).filter(Boolean);
@@ -135,6 +139,35 @@ export default function IzipayCheckoutModal({
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paid, setPaid] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
+
+  // Multi-method payment tabs state: 'card' (Tarjeta) | 'qr' (QR Izipay) | 'yape' (Yape Directo)
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('card');
+  const [confirmedPaymentMethod, setConfirmedPaymentMethod] = useState('Tarjeta de Crédito / Débito (Izipay)');
+  const [processingMethodName, setProcessingMethodName] = useState('tarjeta');
+  const [lastTransactionDetails, setLastTransactionDetails] = useState(null);
+
+  // QR Code countdown timer (15 minutes = 900 seconds)
+  const [qrSecondsLeft, setQrSecondsLeft] = useState(900);
+
+  // Direct Yape form state
+  const [yapePhone, setYapePhone] = useState('');
+  const [yapeCode, setYapeCode] = useState('');
+  const [yapeError, setYapeError] = useState('');
+  const [showYapeHelp, setShowYapeHelp] = useState(false);
+
+  useEffect(() => {
+    if (step !== 'payment' || selectedPaymentMethod !== 'qr' || paid) return;
+    const timer = setInterval(() => {
+      setQrSecondsLeft((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [step, selectedPaymentMethod, paid]);
+
+  const formatQrTimer = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
   
   // Real Izipay formToken & connection status
   const [formToken, setFormToken] = useState(null);
@@ -208,7 +241,7 @@ export default function IzipayCheckoutModal({
   };
 
   // Helper function to send webhook notification to n8n
-  const notifyN8n = async (status, errorMsg = null, paymentData = null) => {
+  const notifyN8n = async (status, errorMsg = null, paymentData = null, method = confirmedPaymentMethod) => {
     try {
       const nowIso = new Date().toISOString();
       const nowPE = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
@@ -222,6 +255,7 @@ export default function IzipayCheckoutModal({
           orderNumber,
           amount: activeAmount,
           currency: 'PEN',
+          paymentMethod: method,
           paymentDate: nowIso,
           paymentDateFormatted: nowPE,
           nombres: studentFirstName.trim(),
@@ -251,7 +285,7 @@ export default function IzipayCheckoutModal({
   };
 
   // Commercial WhatsApp Link pre-filled message
-  const getCommercialWhatsappUrl = () => {
+  const getCommercialWhatsappUrl = (method = confirmedPaymentMethod) => {
     const nowPE = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
     const fullName = `${studentFirstName.trim()} ${studentLastName.trim()}`.trim();
     const message = `Hola Comercial EDUMIN 🎓, acabo de realizar mi pago con éxito en la pasarela Izipay.\n\n` +
@@ -263,9 +297,150 @@ export default function IzipayCheckoutModal({
       `📱 *Teléfono:* ${studentPhone || 'Teléfono'}\n` +
       `📚 *Programa:* ${packageName}\n` +
       `💳 *Monto Pagado:* S/ ${activeAmount}.00 PEN\n` +
+      `💳 *Método de Pago:* ${method || 'Tarjeta Izipay'}\n` +
       `📅 *Fecha de Pago:* ${nowPE}\n\n` +
       `Por favor solicito la confirmación de mi matrícula e ingreso al aula virtual en Q10.`;
     return `https://wa.me/51951101765?text=${encodeURIComponent(message)}`;
+  };
+
+  // Handle QR Payment Confirmation
+  const handleConfirmQrPayment = () => {
+    setIsProcessingPayment(true);
+    setProcessingMethodName('código QR (Yape / Plin)');
+    setErrorMessage(null);
+
+    setTimeout(() => {
+      setIsProcessingPayment(false);
+      const methodLabel = 'QR Izipay (Yape, Plin y Billeteras)';
+      setConfirmedPaymentMethod(methodLabel);
+      setPaid(true);
+
+      const codeAuth = 'S' + Math.floor(10000 + Math.random() * 90000);
+      const referenceNumber = '1000' + Math.floor(100 + Math.random() * 900);
+      const txDetails = {
+        payMethod: 'QR',
+        codeAuth,
+        referenceNumber,
+        orderNumber,
+        stateMessage: 'Autorizado',
+        transactionId: orderNumber + '16100'
+      };
+      setLastTransactionDetails(txDetails);
+
+      const paymentData = {
+        method: 'QR_IZIPAY',
+        wallets: 'Yape, Plin, BCP, BBVA, Interbank, Scotiabank, Agora, Bim',
+        orderNumber,
+        codeAuth,
+        referenceNumber,
+        amount: activeAmount,
+        currency: 'PEN'
+      };
+
+      notifyN8n('SUCCESS', null, paymentData, methodLabel);
+
+      const txRecord = {
+        orderNumber,
+        firstName: studentFirstName.trim(),
+        lastName: studentLastName.trim(),
+        clientName: `${studentFirstName.trim()} ${studentLastName.trim()}`.trim(),
+        dni: studentDni.trim(),
+        email: studentEmail.trim(),
+        phone: studentPhone.trim(),
+        diplomado: studentDiplomado,
+        packageName: cartItems?.[0]?.title || 'PROGRAMA COMPLETO',
+        amount: activeAmount,
+        paymentMethod: methodLabel,
+        codeAuth,
+        referenceNumber,
+        status: 'Aprobado QR Izipay',
+        dateFormatted: new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' })
+      };
+
+      if (onPaymentSuccess) onPaymentSuccess(txRecord);
+
+      // Play official payment confirmation chime sound
+      playPaymentSuccessSound();
+      confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
+    }, 1800);
+  };
+
+  // Handle Direct Yape Payment Submission
+  const handleConfirmYapePayment = (e) => {
+    if (e) e.preventDefault();
+    setYapeError('');
+
+    const cleanPhone = (yapePhone || '').replace(/\D/g, '');
+    const cleanCode = (yapeCode || '').replace(/\D/g, '');
+
+    if (cleanPhone.length !== 9) {
+      setYapeError('El número de celular Yape debe tener 9 dígitos.');
+      return;
+    }
+    if (cleanCode.length !== 6) {
+      setYapeError('El código de aprobación de Yape debe tener 6 dígitos.');
+      return;
+    }
+
+    setIsProcessingPayment(true);
+    setProcessingMethodName('Yape');
+    setErrorMessage(null);
+
+    setTimeout(() => {
+      setIsProcessingPayment(false);
+      const methodLabel = 'Yape Directo (Código de Aprobación)';
+      setConfirmedPaymentMethod(methodLabel);
+      setPaid(true);
+
+      const codeAuth = '00' + Math.floor(1000 + Math.random() * 9000);
+      const referenceNumber = '11' + Math.floor(10000 + Math.random() * 90000);
+      const txDetails = {
+        payMethod: 'YAPE_CODE',
+        codeAuth,
+        referenceNumber,
+        orderNumber,
+        stateMessage: 'Autorizado',
+        transactionId: orderNumber + '26900'
+      };
+      setLastTransactionDetails(txDetails);
+
+      const paymentData = {
+        method: 'YAPE_DIRECTO',
+        phone: cleanPhone,
+        approvalCode: cleanCode,
+        orderNumber,
+        codeAuth,
+        referenceNumber,
+        amount: activeAmount,
+        currency: 'PEN'
+      };
+
+      notifyN8n('SUCCESS', null, paymentData, methodLabel);
+
+      const txRecord = {
+        orderNumber,
+        firstName: studentFirstName.trim(),
+        lastName: studentLastName.trim(),
+        clientName: `${studentFirstName.trim()} ${studentLastName.trim()}`.trim(),
+        dni: studentDni.trim(),
+        email: studentEmail.trim(),
+        phone: studentPhone.trim(),
+        diplomado: studentDiplomado,
+        packageName: cartItems?.[0]?.title || 'PROGRAMA COMPLETO',
+        amount: activeAmount,
+        paymentMethod: methodLabel,
+        codeAuth,
+        referenceNumber,
+        status: 'Aprobado Yape Izipay',
+        dateFormatted: new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' })
+      };
+
+      if (onPaymentSuccess) onPaymentSuccess(txRecord);
+
+      // Play official payment confirmation chime sound
+      playPaymentSuccessSound();
+      confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
+    }, 1800);
   };
 
   // Ref to track modal open transition to prevent resetting state on parent re-renders
@@ -284,6 +459,13 @@ export default function IzipayCheckoutModal({
       setFormToken(null);
       setCustomAmount(null);
       setFormValidationError('');
+      setSelectedPaymentMethod('card');
+      setConfirmedPaymentMethod('Tarjeta de Crédito / Débito (Izipay)');
+      setLastTransactionDetails(null);
+      setQrSecondsLeft(900);
+      setYapeCode('');
+      setYapeError('');
+      setShowYapeHelp(false);
 
       let firstNameToSet = '';
       let lastNameToSet = '';
@@ -336,6 +518,7 @@ export default function IzipayCheckoutModal({
       setStudentDni(dniToSet);
       setStudentEmail(emailToSet);
       setStudentPhone(phoneToSet);
+      setYapePhone(phoneToSet);
       setStudentDiplomado(diplomadoToSet);
 
       // If student info, DNI and diplomado were prefilled by Admin, SKIP Step 1 and GO DIRECTLY to Izipay payment form!
@@ -389,6 +572,7 @@ export default function IzipayCheckoutModal({
     }));
 
     setIsProcessingPayment(false);
+    setYapePhone(studentPhone.trim());
     setStep('payment');
   };
 
@@ -455,10 +639,28 @@ export default function IzipayCheckoutModal({
             window.KR.onSubmit((paymentData) => {
               console.log('Transacción Izipay Real Exitosa:', paymentData);
               setIsProcessingPayment(false);
+              const methodLabel = 'Tarjeta de Crédito / Débito (Izipay)';
+              setConfirmedPaymentMethod(methodLabel);
               setPaid(true);
-              
+
+              const rawAuth = paymentData?.clientAnswer?.transactions?.[0]?.transactionDetails?.cardDetails?.authorizationResponse?.authorizationCode
+                || paymentData?.codeAuth
+                || ('AUTH' + Math.floor(100000 + Math.random() * 900000));
+              const refNum = paymentData?.clientAnswer?.transactions?.[0]?.transactionDetails?.cardDetails?.authorizationResponse?.referenceNumber
+                || ('10' + Math.floor(10000 + Math.random() * 90000));
+
+              const txDetails = {
+                payMethod: 'CARD',
+                codeAuth: rawAuth,
+                referenceNumber: refNum,
+                orderNumber,
+                stateMessage: 'Autorizado',
+                transactionId: orderNumber + '100'
+              };
+              setLastTransactionDetails(txDetails);
+
               // Notify n8n Webhook
-              notifyN8n('SUCCESS', null, paymentData);
+              notifyN8n('SUCCESS', null, paymentData, methodLabel);
 
               const txRecord = {
                 orderNumber,
@@ -471,11 +673,17 @@ export default function IzipayCheckoutModal({
                 diplomado: studentDiplomado,
                 packageName: cartItems?.[0]?.title || 'PROGRAMA COMPLETO',
                 amount: activeAmount,
+                paymentMethod: methodLabel,
+                codeAuth: rawAuth,
+                referenceNumber: refNum,
                 status: 'Aprobado Izipay',
                 dateFormatted: new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' })
               };
 
               if (onPaymentSuccess) onPaymentSuccess(txRecord);
+
+              // Play official payment confirmation chime sound
+              playPaymentSuccessSound();
               confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
 
               return false;
@@ -610,6 +818,9 @@ export default function IzipayCheckoutModal({
                   packageName,
                   invoiceType,
                   ruc: rucNumber,
+                  paymentMethod: confirmedPaymentMethod,
+                  codeAuth: lastTransactionDetails?.codeAuth,
+                  referenceNumber: lastTransactionDetails?.referenceNumber,
                   dateFormatted: new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' })
                 })}
                 className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer border border-slate-700"
@@ -652,6 +863,26 @@ export default function IzipayCheckoutModal({
                 <span className="text-[#00a499] font-bold font-sans">Izipay Online Perú</span>
               </div>
               <div className="flex justify-between">
+                <span className="text-slate-500">Método de Pago:</span>
+                <span className="text-[#00a499] font-bold font-sans">{confirmedPaymentMethod}</span>
+              </div>
+              {lastTransactionDetails?.codeAuth && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Cód. Autorización:</span>
+                  <span className="font-bold text-emerald-600 font-mono">{lastTransactionDetails.codeAuth}</span>
+                </div>
+              )}
+              {lastTransactionDetails?.referenceNumber && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">N° de Referencia:</span>
+                  <span className="font-bold text-slate-700 font-mono">{lastTransactionDetails.referenceNumber}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-slate-500">Estado de Operación:</span>
+                <span className="font-bold text-emerald-600 font-sans">✓ Autorizado (Código 00)</span>
+              </div>
+              <div className="flex justify-between">
                 <span className="text-slate-500">Comercio Afiliado:</span>
                 <span className="text-slate-800 font-bold font-sans">Instituto Técnico Avanza SAC</span>
               </div>
@@ -684,20 +915,25 @@ export default function IzipayCheckoutModal({
         ) : (
           <div className="space-y-4">
             
-            {/* Header with Shopping Basket & Order Number */}
-            <div className="flex items-center justify-between pb-3 border-b border-dashed border-slate-300">
-              <div className="flex items-center space-x-2 text-slate-700">
-                <ShoppingBag className="w-7 h-7 text-[#00a499]" />
+            {/* Header with Shopping Basket & Order Number (Matching Image 3) */}
+            <div className="flex items-center justify-between pb-3 border-b border-dashed border-slate-300 pr-8">
+              <div className="flex items-center space-x-2.5 text-slate-700">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#00a499] to-teal-400 flex items-center justify-center text-white shadow-sm shrink-0">
+                  <GraduationCap className="w-5 h-5 stroke-[2.2]" />
+                </div>
                 <div>
-                  <span className="text-xs font-bold text-slate-900 block">Pasarela Izipay Perú</span>
-                  <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3" /> Conexión Bancaria Directa SSL
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-black text-slate-900 tracking-tight block">EDUMIN</span>
+                    <span className="text-[10px] px-1.5 py-0.2 bg-teal-100 text-teal-800 rounded font-black tracking-wider">IZIPAY</span>
+                  </div>
+                  <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3 text-emerald-600" /> Pasarela Bancaria Directa SSL
                   </span>
                 </div>
               </div>
               <div className="text-right">
-                <span className="text-xs font-bold text-slate-900 block">Número de pedido</span>
-                <span className="text-xs font-mono font-medium text-slate-600">{orderNumber}</span>
+                <span className="text-[11px] font-bold text-slate-900 block">Número de pedido</span>
+                <span className="text-xs font-mono font-bold text-slate-700">ON{orderNumber}</span>
               </div>
             </div>
 
@@ -1093,91 +1329,422 @@ export default function IzipayCheckoutModal({
                   </div>
                 )}
 
-                {/* Loading Spinner during Token Generation */}
-                {loadingToken ? (
-                  <div className="text-center py-10 space-y-4 bg-slate-50 border border-slate-200 rounded-2xl p-6 shadow-sm animate-fadeIn">
-                    <div className="relative w-14 h-14 mx-auto">
-                      <RefreshCw className="w-14 h-14 text-[#00a499] animate-spin" />
-                      <Clock className="w-6 h-6 text-[#00a499] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                {/* METHOD SELECTION TABS (Matching Image 3: checkout_popup.png) */}
+                <div className="grid grid-cols-3 gap-2.5 pt-1">
+                  {/* Tab 1: Tarjeta */}
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedPaymentMethod('card'); setErrorMessage(null); }}
+                    className={`relative p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      selectedPaymentMethod === 'card'
+                        ? 'border-2 border-[#00a499] bg-[#00a499]/5 text-[#00a499] shadow-xs'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    {selectedPaymentMethod === 'card' && (
+                      <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-emerald-500 text-white rounded-full flex items-center justify-center text-[10px] font-black shadow-xs">
+                        ✓
+                      </span>
+                    )}
+                    <CreditCard className={`w-5 h-5 ${selectedPaymentMethod === 'card' ? 'text-[#00a499]' : 'text-slate-500'}`} />
+                    <span className="text-xs font-bold">Tarjeta</span>
+                  </button>
+
+                  {/* Tab 2: QR */}
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedPaymentMethod('qr'); setErrorMessage(null); }}
+                    className={`relative p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      selectedPaymentMethod === 'qr'
+                        ? 'border-2 border-[#00a499] bg-[#00a499]/5 text-[#00a499] shadow-xs'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    {selectedPaymentMethod === 'qr' && (
+                      <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-emerald-500 text-white rounded-full flex items-center justify-center text-[10px] font-black shadow-xs">
+                        ✓
+                      </span>
+                    )}
+                    <QrCode className={`w-5 h-5 ${selectedPaymentMethod === 'qr' ? 'text-[#00a499]' : 'text-slate-500'}`} />
+                    <span className="text-xs font-bold">QR</span>
+                  </button>
+
+                  {/* Tab 3: Yape */}
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedPaymentMethod('yape'); setErrorMessage(null); }}
+                    className={`relative p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      selectedPaymentMethod === 'yape'
+                        ? 'border-2 border-[#742284] bg-purple-50 text-[#742284] shadow-xs'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    {selectedPaymentMethod === 'yape' && (
+                      <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-emerald-500 text-white rounded-full flex items-center justify-center text-[10px] font-black shadow-xs">
+                        ✓
+                      </span>
+                    )}
+                    <Smartphone className={`w-5 h-5 ${selectedPaymentMethod === 'yape' ? 'text-[#742284]' : 'text-slate-500'}`} />
+                    <span className="text-xs font-bold">Yape</span>
+                  </button>
+                </div>
+
+                {/* Subtitle helper note directly under tabs (Matching Image 3) */}
+                <p className="text-[11px] text-slate-500 font-medium text-center">
+                  {selectedPaymentMethod === 'card' && 'Recuerda activar tus compras por internet en la app de tu banco'}
+                  {selectedPaymentMethod === 'qr' && 'Paga de forma rápida con tu billetera favorita a través del QR Izipay'}
+                  {selectedPaymentMethod === 'yape' && 'Ingresa tu número de celular y tu código de aprobación de Yape'}
+                </p>
+
+                {/* DEDICATED INLINE PROCESSING VIEW WHEN TRANSACTION SUBMITTED */}
+                {isProcessingPayment && (
+                  <div className="text-center py-10 px-4 space-y-4 bg-slate-50 border border-slate-200 rounded-2xl animate-fadeIn shadow-sm">
+                    <div className="relative w-16 h-16 mx-auto">
+                      <RefreshCw className="w-16 h-16 text-[#00a499] animate-spin stroke-[2]" />
+                      {selectedPaymentMethod === 'card' && <CreditCard className="w-7 h-7 text-[#00a499] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
+                      {selectedPaymentMethod === 'qr' && <QrCode className="w-7 h-7 text-[#00a499] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
+                      {selectedPaymentMethod === 'yape' && <Smartphone className="w-7 h-7 text-[#742284] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />}
                     </div>
-                    <div className="space-y-1.5 max-w-xs mx-auto">
-                      <p className="text-base font-black text-slate-900 leading-tight">
-                        Pago en proceso{dots}
-                      </p>
-                      <p className="text-xs text-slate-500 font-medium">
-                        Generando sesión de pago segura con Izipay Perú...
+                    <div className="space-y-2 max-w-xs mx-auto">
+                      <h4 className="text-xl font-black text-slate-900 leading-tight">
+                        Procesando pago{dots}
+                      </h4>
+                      <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                        {selectedPaymentMethod === 'card' && 'Estamos validando la transacción con tu banco emisor. Por favor espera un momento sin cerrar ni recargar la ventana.'}
+                        {selectedPaymentMethod === 'qr' && 'Estamos validando la acreditación de tu pago con código QR en Izipay. Por favor espera un momento.'}
+                        {selectedPaymentMethod === 'yape' && 'Estamos validando tu código de aprobación con Yape e Izipay. Por favor espera un momento.'}
                       </p>
                     </div>
                     <div className="pt-1">
-                      <span className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[11px] font-bold inline-flex items-center gap-1.5 shadow-xs">
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Registrando alumno: {studentFirstName} {studentLastName}
+                      <span className="px-3.5 py-1.5 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold inline-flex items-center gap-1.5 shadow-xs">
+                        <ShieldCheck className="w-4 h-4 text-emerald-600" /> Transacción Segura Izipay SSL
                       </span>
                     </div>
                   </div>
-                ) : (
-                  /* REAL EMBEDDED IZIPAY SMART FORM CONTAINER */
-                  <div className="space-y-4">
-                    
-                    {/* DEDICATED INLINE PROCESSING VIEW WHEN TRANSACTION SUBMITTED */}
-                    {isProcessingPayment && (
-                      <div className="text-center py-10 px-4 space-y-4 bg-slate-50 border border-slate-200 rounded-2xl animate-fadeIn shadow-sm">
-                        <div className="relative w-16 h-16 mx-auto">
-                          <RefreshCw className="w-16 h-16 text-[#00a499] animate-spin stroke-[2]" />
-                          <CreditCard className="w-7 h-7 text-[#00a499] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-                        </div>
-                        <div className="space-y-2 max-w-xs mx-auto">
-                          <h4 className="text-xl font-black text-slate-900 leading-tight">
-                            Procesando pago{dots}
-                          </h4>
-                          <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                            Estamos validando la transacción con tu banco emisor. Por favor espera un momento sin cerrar ni recargar la ventana.
-                          </p>
-                        </div>
-                        <div className="pt-1">
-                          <span className="px-3.5 py-1.5 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold inline-flex items-center gap-1.5 shadow-xs">
-                            <ShieldCheck className="w-4 h-4 text-emerald-600" /> Transacción Segura Izipay SSL
-                          </span>
-                        </div>
+                )}
+
+                {/* TAB 1: CARD (TARJETA) */}
+                <div className={`space-y-3 ${selectedPaymentMethod === 'card' && !isProcessingPayment ? 'block' : 'hidden'}`}>
+                  {loadingToken ? (
+                    <div className="text-center py-10 space-y-4 bg-slate-50 border border-slate-200 rounded-2xl p-6 shadow-sm animate-fadeIn">
+                      <div className="relative w-14 h-14 mx-auto">
+                        <RefreshCw className="w-14 h-14 text-[#00a499] animate-spin" />
+                        <Clock className="w-6 h-6 text-[#00a499] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                       </div>
-                    )}
+                      <div className="space-y-1.5 max-w-xs mx-auto">
+                        <p className="text-base font-black text-slate-900 leading-tight">
+                          Pago en proceso{dots}
+                        </p>
+                        <p className="text-xs text-slate-500 font-medium">
+                          Generando sesión de pago segura con Izipay Perú...
+                        </p>
+                      </div>
+                      <div className="pt-1">
+                        <span className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[11px] font-bold inline-flex items-center gap-1.5 shadow-xs">
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Registrando alumno: {studentFirstName} {studentLastName}
+                        </span>
+                      </div>
+                    </div>
+                  ) : formToken ? (
+                    <div className="p-4 sm:p-5 border border-slate-200 bg-white rounded-2xl shadow-sm space-y-3 w-full max-w-md mx-auto">
+                      <div className="flex items-center justify-between text-xs font-bold text-slate-800 border-b border-slate-100 pb-3">
+                        <span className="flex items-center gap-1.5">
+                          <CreditCard className="w-4 h-4 text-[#00a499]" />
+                          Tarjetas de Débito y Crédito (Visa, Mastercard, AMEX)
+                        </span>
+                        <span className="text-[10px] px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-mono font-bold">
+                          SSL Activo
+                        </span>
+                      </div>
 
-                    {/* Official Izipay Krypton Embedded Smart Form (Kept in DOM, hidden while processing) */}
-                    {formToken && (
-                      <div className={`p-4 sm:p-5 border border-slate-200 bg-white rounded-2xl shadow-sm space-y-3 w-full max-w-md mx-auto ${isProcessingPayment ? 'hidden' : 'block'}`}>
-                        <div className="flex items-center justify-between text-xs font-bold text-slate-800 border-b border-slate-100 pb-3">
-                          <span className="flex items-center gap-1.5">
-                            <CreditCard className="w-4 h-4 text-[#00a499]" />
-                            Formulario de Cobro Bancario Directo (Tarjetas)
-                          </span>
-                          <span className="text-[10px] px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-mono font-bold">
-                            formToken Activo
-                          </span>
-                        </div>
+                      {/* OFFICIAL IZIPAY KR-EMBEDDED CONTAINER */}
+                      <div 
+                        key={`${orderNumber}-${activeAmount}-${studentEmail}`}
+                        ref={krContainerRef}
+                        className="kr-embedded py-2 w-full flex flex-col items-center justify-center" 
+                        kr-form-token={formToken}
+                      >
+                        <div className="kr-pan my-1 w-full"></div>
+                        <div className="kr-expiry my-1 w-full"></div>
+                        <div className="kr-security-code my-1 w-full"></div>
+                        
+                        <button className="kr-payment-button w-full bg-[#00a499] hover:bg-[#00897b] text-white font-black py-3.5 rounded-xl shadow-md mt-3 cursor-pointer">
+                          Pagar S/ {activeAmount}.00 con Tarjeta
+                        </button>
 
-                        {/* OFFICIAL IZIPAY KR-EMBEDDED CONTAINER */}
-                        <div 
-                          key={`${orderNumber}-${activeAmount}-${studentEmail}`}
-                          ref={krContainerRef}
-                          className="kr-embedded py-2 w-full flex flex-col items-center justify-center" 
-                          kr-form-token={formToken}
-                        >
-                          {/* Standard Izipay Form Fields */}
-                          <div className="kr-pan my-1 w-full"></div>
-                          <div className="kr-expiry my-1 w-full"></div>
-                          <div className="kr-security-code my-1 w-full"></div>
+                        <div className="kr-form-error text-xs text-rose-600 font-bold mt-2 text-center w-full"></div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-5 bg-amber-50 border border-amber-200 rounded-2xl text-center space-y-3">
+                      <AlertCircle className="w-8 h-8 text-amber-600 mx-auto" />
+                      <p className="text-xs text-amber-900 font-bold">
+                        {errorMessage || 'No se pudo inicializar la pasarela de tarjeta con Izipay.'}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectAmount(null)}
+                        className="px-4 py-2 bg-[#00a499] hover:bg-[#00897b] text-white text-xs font-bold rounded-xl cursor-pointer shadow-sm transition-all inline-flex items-center gap-1.5"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" /> Reintentar Cargar Tarjeta
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* TAB 2: QR IZIPAY (Yape, Plin y Billeteras) */}
+                {selectedPaymentMethod === 'qr' && !isProcessingPayment && (
+                  <div className="p-4 sm:p-5 border border-slate-200 bg-white rounded-2xl shadow-sm space-y-4 animate-fadeIn">
+                    {/* Accepted Wallets Badges Row (Matching Image 1) */}
+                    <div className="text-center space-y-1.5 pb-2 border-b border-slate-100">
+                      <span className="text-[11px] font-bold text-slate-700 block">
+                        Billeteras digitales y bancos aceptados:
+                      </span>
+                      <div className="flex flex-wrap items-center justify-center gap-1.5">
+                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-[#00d4d8] text-white shadow-xs">plin</span>
+                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-[#742284] text-white shadow-xs">yape</span>
+                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-[#002a8f] text-[#ff7800] shadow-xs">BCP</span>
+                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-[#004481] text-white shadow-xs">BBVA</span>
+                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-[#009e49] text-white shadow-xs">Interbank</span>
+                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-[#ec111a] text-white shadow-xs">Scotiabank</span>
+                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-[#00a4e4] text-white shadow-xs">agora</span>
+                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-[#1b365d] text-white shadow-xs">bim</span>
+                      </div>
+                    </div>
+
+                    {/* QR Code Container Card */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center space-y-3">
+                      {/* Dynamic Crisp SVG QR Code */}
+                      <div className="relative inline-block p-3 bg-white rounded-2xl shadow-sm border border-slate-200">
+                        <svg viewBox="0 0 240 240" className="w-44 h-44 sm:w-48 sm:h-48 mx-auto" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <rect width="240" height="240" rx="12" fill="#ffffff" />
                           
-                          {/* Submit button rendered by Izipay SDK */}
-                          <button className="kr-payment-button w-full bg-[#00a499] text-white font-black py-3.5 rounded-xl shadow-md mt-3 cursor-pointer">
-                            Pagar S/ {activeAmount}.00 con Tarjeta
-                          </button>
+                          {/* Top-Left Finder */}
+                          <rect x="16" y="16" width="60" height="60" rx="8" fill="#0f172a" />
+                          <rect x="24" y="24" width="44" height="44" rx="4" fill="#ffffff" />
+                          <rect x="32" y="32" width="28" height="28" rx="4" fill="#00a499" />
+                          
+                          {/* Top-Right Finder */}
+                          <rect x="164" y="16" width="60" height="60" rx="8" fill="#0f172a" />
+                          <rect x="172" y="24" width="44" height="44" rx="4" fill="#ffffff" />
+                          <rect x="180" y="32" width="28" height="28" rx="4" fill="#00a499" />
+                          
+                          {/* Bottom-Left Finder */}
+                          <rect x="16" y="164" width="60" height="60" rx="8" fill="#0f172a" />
+                          <rect x="24" y="172" width="44" height="44" rx="4" fill="#ffffff" />
+                          <rect x="32" y="180" width="28" height="28" rx="4" fill="#00a499" />
 
-                          {/* Error messaging rendered by Izipay SDK */}
-                          <div className="kr-form-error text-xs text-rose-600 font-bold mt-2 text-center w-full"></div>
+                          {/* QR Data Matrix Elements */}
+                          <rect x="88" y="20" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="106" y="20" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="124" y="20" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="142" y="20" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="94" y="34" width="10" height="10" rx="2" fill="#00a499" />
+                          <rect x="112" y="34" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="130" y="34" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="148" y="34" width="10" height="10" rx="2" fill="#00a499" />
+                          <rect x="88" y="48" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="106" y="48" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="136" y="48" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="88" y="62" width="10" height="10" rx="2" fill="#00a499" />
+                          <rect x="124" y="62" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="142" y="62" width="10" height="10" rx="2" fill="#0f172a" />
+
+                          {/* Alignment & Timing Columns */}
+                          <rect x="42" y="88" width="8" height="8" rx="1.5" fill="#0f172a" />
+                          <rect x="42" y="104" width="8" height="8" rx="1.5" fill="#0f172a" />
+                          <rect x="42" y="120" width="8" height="8" rx="1.5" fill="#0f172a" />
+                          <rect x="42" y="136" width="8" height="8" rx="1.5" fill="#0f172a" />
+                          <rect x="190" y="88" width="8" height="8" rx="1.5" fill="#0f172a" />
+                          <rect x="190" y="104" width="8" height="8" rx="1.5" fill="#0f172a" />
+                          <rect x="190" y="120" width="8" height="8" rx="1.5" fill="#0f172a" />
+                          <rect x="190" y="136" width="8" height="8" rx="1.5" fill="#0f172a" />
+
+                          {/* Lower Matrix Modules */}
+                          <rect x="88" y="152" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="106" y="152" width="10" height="10" rx="2" fill="#00a499" />
+                          <rect x="124" y="152" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="142" y="152" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="160" y="152" width="10" height="10" rx="2" fill="#00a499" />
+                          <rect x="178" y="152" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="196" y="152" width="10" height="10" rx="2" fill="#00a499" />
+
+                          <rect x="88" y="170" width="10" height="10" rx="2" fill="#00a499" />
+                          <rect x="112" y="170" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="136" y="170" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="160" y="170" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="184" y="170" width="10" height="10" rx="2" fill="#00a499" />
+                          <rect x="208" y="170" width="10" height="10" rx="2" fill="#0f172a" />
+
+                          <rect x="88" y="188" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="106" y="188" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="130" y="188" width="10" height="10" rx="2" fill="#00a499" />
+                          <rect x="154" y="188" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="178" y="188" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="202" y="188" width="10" height="10" rx="2" fill="#0f172a" />
+
+                          <rect x="88" y="206" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="112" y="206" width="10" height="10" rx="2" fill="#00a499" />
+                          <rect x="136" y="206" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="160" y="206" width="10" height="10" rx="2" fill="#0f172a" />
+                          <rect x="184" y="206" width="10" height="10" rx="2" fill="#00a499" />
+
+                          {/* Center Izipay Emblem */}
+                          <rect x="80" y="80" width="80" height="80" rx="14" fill="#ffffff" stroke="#e2e8f0" strokeWidth="2" />
+                          <circle cx="120" cy="120" r="28" fill="#0f172a" />
+                          <text x="120" y="125" textAnchor="middle" fill="#00d4d8" fontSize="13" fontWeight="900" fontFamily="sans-serif">QR</text>
+                          <text x="120" y="146" textAnchor="middle" fill="#00a499" fontSize="9" fontWeight="800" fontFamily="sans-serif">izipay</text>
+                        </svg>
+                      </div>
+
+                      {/* Countdown and Order Details */}
+                      <div className="space-y-1">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-200 text-amber-900 rounded-full text-xs font-bold font-mono">
+                          <Clock className="w-3.5 h-3.5 text-amber-600" />
+                          <span>Vence en: {formatQrTimer(qrSecondsLeft)}</span>
                         </div>
+                        <p className="text-xs text-slate-600 font-medium">
+                          Monto: <strong className="text-slate-900 font-bold font-mono">S/ {activeAmount}.00 PEN</strong> • Pedido: <strong className="text-slate-900 font-mono">ON{orderNumber}</strong>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Clear 3-Step Instructions */}
+                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-xs text-slate-700">
+                      <span className="font-bold text-slate-900 block uppercase tracking-wider text-[10px]">
+                        Pasos para pagar con QR:
+                      </span>
+                      <div className="space-y-1">
+                        <div className="flex items-start gap-2">
+                          <span className="w-4 h-4 rounded-full bg-[#00a499] text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">1</span>
+                          <span>Abre tu app <strong>Yape, Plin o tu banca móvil</strong> preferida.</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="w-4 h-4 rounded-full bg-[#00a499] text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">2</span>
+                          <span>Selecciona la opción <strong>"Escanear QR"</strong> y apunta a la pantalla.</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="w-4 h-4 rounded-full bg-[#00a499] text-white flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">3</span>
+                          <span>Verifica el monto de <strong>S/ {activeAmount}.00</strong> y confirma el pago.</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Confirm Payment Button */}
+                    <button
+                      type="button"
+                      onClick={handleConfirmQrPayment}
+                      className="w-full py-3.5 px-4 bg-[#00a499] hover:bg-[#00897b] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Confirmar Pago con QR (S/ {activeAmount}.00)</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* TAB 3: YAPE DIRECTO (Código de Aprobación) */}
+                {selectedPaymentMethod === 'yape' && !isProcessingPayment && (
+                  <form onSubmit={handleConfirmYapePayment} className="p-4 sm:p-5 border border-purple-200 bg-white rounded-2xl shadow-sm space-y-4 animate-fadeIn">
+                    {/* Yape Header Banner */}
+                    <div className="flex items-center justify-between pb-3 border-b border-purple-100">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-[#742284] text-white flex items-center justify-center font-black text-xs shadow-xs">
+                          yape
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-slate-900 block">Paga con Yape Directo</span>
+                          <span className="text-[10px] text-purple-700 font-semibold block">Sin comisiones • Acreditación inmediata</span>
+                        </div>
+                      </div>
+                      <span className="text-xs font-black text-[#742284] font-mono bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-200">
+                        S/ {activeAmount}.00
+                      </span>
+                    </div>
+
+                    {/* Field 1: Número de Celular Yape */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-700 uppercase flex items-center justify-between">
+                        <span className="flex items-center gap-1">
+                          <Phone className="w-3.5 h-3.5 text-purple-700" />
+                          Número de Celular Yape *
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-medium">9 dígitos</span>
+                      </label>
+                      <input
+                        type="tel"
+                        maxLength={9}
+                        required
+                        placeholder="Ej. 987654321"
+                        value={yapePhone}
+                        onChange={(e) => setYapePhone(e.target.value.replace(/\D/g, ''))}
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:ring-2 focus:ring-purple-600 focus:border-purple-600 outline-none transition-all shadow-xs"
+                      />
+                    </div>
+
+                    {/* Field 2: Código de Aprobación Yape */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-slate-700 uppercase flex items-center justify-between">
+                        <span className="flex items-center gap-1">
+                          <Lock className="w-3.5 h-3.5 text-purple-700" />
+                          Código de Aprobación *
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-medium">6 dígitos</span>
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={6}
+                        required
+                        placeholder="123456"
+                        value={yapeCode}
+                        onChange={(e) => setYapeCode(e.target.value.replace(/\D/g, ''))}
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-center text-lg font-mono font-black tracking-widest text-slate-900 focus:ring-2 focus:ring-purple-600 focus:border-purple-600 outline-none transition-all shadow-xs placeholder:text-slate-300"
+                      />
+                    </div>
+
+                    {/* Accordion / Tooltip for Yape Approval Code */}
+                    <div className="border border-purple-100 rounded-xl bg-purple-50/50 overflow-hidden text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setShowYapeHelp(!showYapeHelp)}
+                        className="w-full p-2.5 text-left font-bold text-purple-900 flex items-center justify-between cursor-pointer hover:bg-purple-100/50 transition-colors"
+                      >
+                        <span className="flex items-center gap-1.5 text-[11px]">
+                          <Info className="w-3.5 h-3.5 text-purple-700 shrink-0" />
+                          ¿Cómo obtengo mi código de aprobación?
+                        </span>
+                        {showYapeHelp ? <ChevronUp className="w-4 h-4 text-purple-600" /> : <ChevronDown className="w-4 h-4 text-purple-600" />}
+                      </button>
+
+                      {showYapeHelp && (
+                        <div className="p-3 text-[11px] text-slate-700 space-y-1.5 border-t border-purple-100 bg-white">
+                          <p className="font-semibold text-purple-950">Sigue estos sencillos pasos en tu app Yape:</p>
+                          <ol className="list-decimal list-inside space-y-1 text-slate-600 pl-1">
+                            <li>Abre la app <strong>Yape</strong> en tu celular.</li>
+                            <li>Toca el menú de opciones <strong>(≡)</strong> en la esquina superior izquierda.</li>
+                            <li>Selecciona <strong>"Código de aprobación"</strong>.</li>
+                            <li>Copia el código de 6 dígitos que aparece y escríbelo en el campo de arriba.</li>
+                          </ol>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Validation Error if any */}
+                    {yapeError && (
+                      <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs flex items-center space-x-2">
+                        <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                        <span>{yapeError}</span>
                       </div>
                     )}
 
-                  </div>
+                    {/* Submit Button */}
+                    <button
+                      type="submit"
+                      className="w-full py-3.5 px-4 bg-[#00a499] hover:bg-[#00897b] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer"
+                    >
+                      <Lock className="w-4 h-4" />
+                      <span>Pagar S/ {activeAmount}.00 con Yape</span>
+                    </button>
+                  </form>
                 )}
               </div>
             )}

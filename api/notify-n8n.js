@@ -1,18 +1,10 @@
 // Vercel Serverless Function: Forward payment status events to n8n Webhook
-// Target n8n Webhook: https://n8n.gcg-corp.com/webhook/c592d97d-78d1-4ead-8bed-673be3464658
+// Hardened with Strict CORS and Sanitization
+
+import { applyCorsAndSecurity } from './_security.js';
 
 export default async function handler(req, res) {
-  // CORS Headers
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
+  if (applyCorsAndSecurity(req, res, 'POST,OPTIONS')) {
     return;
   }
 
@@ -21,7 +13,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const webhookUrl = 'https://n8n.gcg-corp.com/webhook/c592d97d-78d1-4ead-8bed-673be3464658';
+    const webhookUrl = process.env.N8N_WEBHOOK_URL || 'https://n8n.gcg-corp.com/webhook/c592d97d-78d1-4ead-8bed-673be3464658';
 
     const {
       status, // 'SUCCESS' | 'REJECTED' | 'ERROR'
@@ -42,11 +34,16 @@ export default async function handler(req, res) {
       paymentData
     } = req.body || {};
 
-    const activeDiplomado = diplomado || customer?.diplomado || 'No especificado';
-    const activeDni = dni || customer?.dni || 'No especificado';
-    const activeNombres = nombres || customer?.firstName || '';
-    const activeApellidos = apellidos || customer?.lastName || '';
-    const activeFullName = nombreCompleto || customer?.fullName || customer?.name || `${activeNombres} ${activeApellidos}`.trim() || 'Alumno EDUMIN';
+    const sanitizeStr = (str, maxLen = 120) => {
+      if (typeof str !== 'string') return '';
+      return str.replace(/[<>'"]/g, '').trim().slice(0, maxLen);
+    };
+
+    const activeDiplomado = sanitizeStr(diplomado || customer?.diplomado) || 'No especificado';
+    const activeDni = sanitizeStr(dni || customer?.dni, 20) || 'No especificado';
+    const activeNombres = sanitizeStr(nombres || customer?.firstName);
+    const activeApellidos = sanitizeStr(apellidos || customer?.lastName);
+    const activeFullName = sanitizeStr(nombreCompleto || customer?.fullName || customer?.name || `${activeNombres} ${activeApellidos}`.trim()) || 'Alumno EDUMIN';
 
     const nowIso = paymentDate || new Date().toISOString();
     const nowFormatted = paymentDateFormatted || new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
@@ -54,9 +51,9 @@ export default async function handler(req, res) {
     const payload = {
       event: status === 'SUCCESS' ? 'payment_success' : 'payment_rejected',
       status: status || 'UNKNOWN',
-      orderNumber: orderNumber || 'N/A',
-      amount: amount || 0,
-      currency: currency,
+      orderNumber: sanitizeStr(orderNumber, 64) || 'N/A',
+      amount: parseFloat(amount) || 0,
+      currency: currency === 'USD' ? 'USD' : 'PEN',
       paymentDate: nowIso,
       paymentDateFormatted: nowFormatted,
       nombres: activeNombres,
@@ -69,14 +66,14 @@ export default async function handler(req, res) {
         lastName: activeApellidos,
         fullName: activeFullName,
         name: activeFullName,
-        email: customer?.email || 'alumno@edumin.pe',
-        phone: customer?.phone || '987654321',
+        email: sanitizeStr(customer?.email, 120) || 'alumno@edumin.pe',
+        phone: (customer?.phone ? String(customer.phone).replace(/\D/g, '') : '').slice(0, 15) || '987654321',
         dni: activeDni,
         diplomado: activeDiplomado
       },
-      packageName: packageName || 'PROGRAMA DE ESPECIALIZACIÓN EDUMIN',
+      packageName: sanitizeStr(packageName) || 'PROGRAMA DE ESPECIALIZACIÓN EDUMIN',
       mode: mode || 'production',
-      errorMessage: errorMessage || null,
+      errorMessage: errorMessage ? sanitizeStr(errorMessage, 200) : null,
       merchant: {
         name: 'Instituto Técnico Avanza SAC',
         shopId: '74025911'
@@ -85,7 +82,7 @@ export default async function handler(req, res) {
       timestamp: nowIso
     };
 
-    console.log('Enviando notificación a n8n:', payload);
+    console.log('Enviando notificación a n8n:', { orderNumber: payload.orderNumber, status: payload.status });
 
     const n8nRes = await fetch(webhookUrl, {
       method: 'POST',
@@ -96,19 +93,19 @@ export default async function handler(req, res) {
     });
 
     const resText = await n8nRes.text();
-    console.log('Respuesta de n8n Webhook:', n8nRes.status, resText);
 
     return res.status(200).json({
       success: true,
+      notified: n8nRes.ok,
       n8nStatus: n8nRes.status,
-      message: 'Notificación enviada a n8n correctamente'
+      message: 'Notificación procesada con éxito'
     });
 
   } catch (error) {
-    console.error('Error enviando notificación a n8n:', error);
+    console.error('Error en /api/notify-n8n:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Error notificando al webhook de n8n'
+      error: error.message || 'Error notificando al servidor de automatización'
     });
   }
 }

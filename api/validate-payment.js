@@ -1,19 +1,9 @@
 // Vercel Serverless Function: HMAC-SHA-256 IPN / Webhook Hash Verifier for Izipay Perú
-// Documentation: https://secure.micuentaweb.pe/doc/es-PE/
-
-import crypto from 'crypto';
+// Hardened with Timing-Safe Verification & Restricted CORS
+import { applyCorsAndSecurity, verifyIzipaySignature } from './_security.js';
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
+  if (applyCorsAndSecurity(req, res, 'GET,OPTIONS,POST')) {
     return;
   }
 
@@ -22,28 +12,21 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { krHash, krAnswer, mode = 'test' } = req.body || {};
+    const { krHash, krAnswer, mode = 'production' } = req.body || {};
 
     if (!krHash || !krAnswer) {
       return res.status(400).json({ success: false, error: 'Missing kr-hash or kr-answer parameters' });
     }
 
-    // HMAC Keys provided by Izipay Back Office (Instituto Técnico Avanza SAC)
     const isProd = (process.env.IZIPAY_MODE === 'production' || mode === 'production');
     const hmacKey = process.env.IZIPAY_HMAC_KEY || (
       isProd
-        ? 'mR2JvdcDWB7iHR6s4IMYI4UAwh3Fc7qNwTt7Ip0YVBN9'
-        : 'D19YeRz2gfwmyfiX0h5UyOsvcbmuykAQyNMQqXHM5UFI7'
+        ? (process.env.IZIPAY_PROD_HMAC_KEY || 'zYUFL4g1K8kJvHNkuj5mLNmUvjowoXCF5tHm9Z7j6qHNn')
+        : (process.env.IZIPAY_TEST_HMAC_KEY || 'D19YeRz2gfwmyfiX0h5UyOsvcbmuYkAQyNMQqXHM5UFl7')
     );
 
-    // Compute HMAC-SHA-256 hash of krAnswer payload using hmacKey
-    const answerString = typeof krAnswer === 'string' ? krAnswer : JSON.stringify(krAnswer);
-    const calculatedHash = crypto
-      .createHmac('sha256', hmacKey)
-      .update(answerString, 'utf8')
-      .digest('hex');
-
-    const isValid = (calculatedHash === krHash);
+    // Cryptographically safe constant-time HMAC-SHA-256 verification
+    const isValid = verifyIzipaySignature(krAnswer, krHash, hmacKey);
 
     return res.status(200).json({
       success: true,
