@@ -1001,6 +1001,47 @@ export default function IzipayCheckoutModal({
               </div>
             )}
 
+            {/* TOP 3-STEP PROGRESS INDICATOR */}
+            {!paid && (
+              <div className="mb-4 bg-slate-900 border border-slate-800 rounded-2xl p-3 shadow-inner">
+                <div className="flex items-center justify-between max-w-sm mx-auto text-[11px] font-extrabold">
+                  
+                  {/* Step 1 Indicator */}
+                  <div className={`flex items-center gap-1.5 ${step === 'info' ? 'text-amber-400' : 'text-emerald-400'}`}>
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                      step === 'info' ? 'bg-amber-400 text-slate-950 ring-2 ring-amber-400/30' : 'bg-emerald-500 text-white'
+                    }`}>
+                      {step === 'payment' ? '✓' : '1'}
+                    </span>
+                    <span className="hidden sm:inline">1. Datos</span>
+                  </div>
+
+                  <div className={`flex-1 h-0.5 mx-2.5 rounded-full ${step === 'payment' ? 'bg-emerald-500' : 'bg-slate-700'}`}></div>
+
+                  {/* Step 2 Indicator */}
+                  <div className={`flex items-center gap-1.5 ${step === 'payment' ? 'text-[#00a499]' : 'text-slate-500'}`}>
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                      step === 'payment' ? 'bg-[#00a499] text-white ring-2 ring-[#00a499]/30' : 'bg-slate-800 text-slate-400 border border-slate-700'
+                    }`}>
+                      2
+                    </span>
+                    <span className="hidden sm:inline">2. Pago Seguro</span>
+                  </div>
+
+                  <div className="flex-1 h-0.5 mx-2.5 rounded-full bg-slate-700"></div>
+
+                  {/* Step 3 Indicator */}
+                  <div className="flex items-center gap-1.5 text-slate-500">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black bg-slate-800 text-slate-400 border border-slate-700">
+                      3
+                    </span>
+                    <span className="hidden sm:inline">3. Voucher</span>
+                  </div>
+
+                </div>
+              </div>
+            )}
+
             {/* STEP 1: DATOS DEL ALUMNO */}
             {step === 'info' && (
               <form onSubmit={handleProceedToPayment} className="space-y-4 animate-fadeIn">
@@ -1149,14 +1190,22 @@ export default function IzipayCheckoutModal({
                         <ShieldCheck className="w-3.5 h-3.5 text-[#00a499]" />
                         DNI / Documento de Identidad *
                       </span>
-                      <span className="text-[10px] text-[#00a499] font-bold">(Para Matrícula Q10)</span>
+                      {studentDni.length === 8 ? (
+                        <span className="text-[10px] text-emerald-600 font-extrabold flex items-center gap-0.5">
+                          ✓ DNI Válido (8 dígitos)
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-[#00a499] font-bold">(Para Matrícula Q10)</span>
+                      )}
                     </label>
                     <input
                       type="text"
                       required
+                      inputMode="numeric"
+                      maxLength={8}
                       placeholder="Ej. 74829102"
                       value={studentDni}
-                      onChange={(e) => setStudentDni(e.target.value)}
+                      onChange={(e) => setStudentDni(e.target.value.replace(/\D/g, '').slice(0, 8))}
                       className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:ring-2 focus:ring-[#00a499] focus:border-[#00a499] outline-none transition-all shadow-sm"
                     />
                   </div>
@@ -1179,17 +1228,28 @@ export default function IzipayCheckoutModal({
 
                   {/* FIELD 5: TELÉFONO / WHATSAPP */}
                   <div className="space-y-1">
-                    <label className="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1">
-                      <Phone className="w-3.5 h-3.5 text-slate-500" />
-                      Teléfono / WhatsApp *
+                    <label className="text-[11px] font-bold text-slate-700 uppercase flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        <Phone className="w-3.5 h-3.5 text-slate-500" />
+                        Teléfono / WhatsApp *
+                      </span>
+                      {studentPhone.length === 9 ? (
+                        <span className="text-[10px] text-emerald-600 font-extrabold flex items-center gap-0.5">
+                          ✓ WhatsApp Válido
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 font-medium">9 dígitos (Perú)</span>
+                      )}
                     </label>
                     <input
                       type="tel"
                       required
+                      inputMode="numeric"
+                      maxLength={9}
                       placeholder="Ej. 987654321"
                       value={studentPhone}
-                      onChange={(e) => setStudentPhone(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#00a499] focus:border-[#00a499] outline-none transition-all shadow-sm"
+                      onChange={(e) => setStudentPhone(e.target.value.replace(/\D/g, '').slice(0, 9))}
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-[#00a499] focus:border-[#00a499] outline-none transition-all shadow-sm"
                     />
                   </div>
 

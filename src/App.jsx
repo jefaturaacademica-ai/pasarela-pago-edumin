@@ -14,6 +14,7 @@ import Footer from './components/Footer';
 import StickyMobileBar from './components/StickyMobileBar';
 import DiplomadosCatalogModal from './components/DiplomadosCatalogModal';
 import CursosCatalogModal from './components/CursosCatalogModal';
+import TrustBadges from './components/TrustBadges';
 
 import { validatePaymentIntegrity } from './utils/securityUtils';
 
@@ -118,12 +119,20 @@ export default function App() {
   const [izipayCheckoutAmount, setIzipayCheckoutAmount] = useState(540);
   const [izipayCheckoutItems, setIzipayCheckoutItems] = useState([]);
 
-  // Asesora Auth State (Safely parsed from localStorage)
+  // Asesora Auth State (Safely parsed from localStorage with 4-hour expiration)
   const [asesoraSession, setAsesoraSession] = useState(() => {
     if (typeof window !== 'undefined' && window.localStorage) {
       try {
         const saved = localStorage.getItem('edumin_asesora_session');
-        if (saved) return JSON.parse(saved);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.expiresAt && Date.now() > parsed.expiresAt) {
+            console.log('Sesión de administración expirada automáticamente por seguridad.');
+            localStorage.removeItem('edumin_asesora_session');
+            return null;
+          }
+          return parsed;
+        }
       } catch (e) {
         console.warn('Error reading edumin_asesora_session from localStorage:', e);
         try { localStorage.removeItem('edumin_asesora_session'); } catch (_) {}
@@ -462,6 +471,9 @@ export default function App() {
         onOpenAdminPanel={() => handleOpenAdminPanel(null)}
         onSelectCategory={(cat) => setActiveCategory(cat)}
       />
+
+      {/* Official Trust & Banking Security Badges */}
+      <TrustBadges />
 
       {/* Main Specialization Packages & Courses Grid */}
       <main className="flex-1 py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-16">
