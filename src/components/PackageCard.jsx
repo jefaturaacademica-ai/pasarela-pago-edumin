@@ -1,5 +1,31 @@
 import React, { useState } from 'react';
-import { Check, X, ArrowRight, ShieldCheck, CreditCard, ShoppingCart, MessageSquare, Zap, Sparkles, Award, Star } from 'lucide-react';
+import { Check, X, ArrowRight, ShieldCheck, CreditCard, ShoppingCart, MessageSquare, Zap, Sparkles, Award, Star, Calendar } from 'lucide-react';
+
+// Helper to calculate exact 1-month installment schedule from today
+export const calculateInstallmentSchedule = (count, amount) => {
+  const today = new Date();
+  const startDay = today.getDate();
+  const monthsShort = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
+
+  const schedule = [];
+  for (let i = 0; i < count; i++) {
+    const targetYear = today.getFullYear();
+    const targetMonth = today.getMonth() + i;
+    const daysInTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+    const actualDay = Math.min(startDay, daysInTargetMonth);
+    const dueDate = new Date(targetYear, targetMonth, actualDay);
+    const monthName = monthsShort[dueDate.getMonth()];
+
+    schedule.push({
+      number: i + 1,
+      amount,
+      isToday: i === 0,
+      label: i === 0 ? `Hoy (${actualDay} ${monthName})` : `${actualDay} ${monthName}`,
+      fullDate: `${actualDay} de ${monthName} ${dueDate.getFullYear()}`
+    });
+  }
+  return schedule;
+};
 
 export default function PackageCard({ 
   packageData, 
@@ -15,9 +41,13 @@ export default function PackageCard({
   // Interactive Payment Mode toggle: 'contado' | 'cuotas'
   const hasCuotas = cuotaOptions && cuotaOptions.length > 0;
   const [paymentMode, setPaymentMode] = useState('contado');
+  const [selectedCuotaIndex, setSelectedCuotaIndex] = useState(0);
 
-  const selectedCuota = hasCuotas ? cuotaOptions[0] : null;
+  const selectedCuota = hasCuotas ? (cuotaOptions[selectedCuotaIndex] || cuotaOptions[0]) : null;
   const currentCheckoutAmount = (paymentMode === 'cuotas' && selectedCuota) ? selectedCuota.amount : basePrice;
+  const installmentSchedule = (paymentMode === 'cuotas' && selectedCuota) 
+    ? calculateInstallmentSchedule(selectedCuota.count, selectedCuota.amount) 
+    : [];
 
   const handleRequestCuotasWhatsApp = (cuotaOpt) => {
     const message = `Hola asesora EDUMIN 🎓, deseo solicitar mi plan de cuotas para el *${title}* (${cuotaOpt.count} cuotas de S/ ${cuotaOpt.amount}). Mis datos son:`;
@@ -31,7 +61,10 @@ export default function PackageCard({
         ...packageData,
         basePrice: selectedCuota.amount,
         selectedCuotaText: `Cuota 1 de ${selectedCuota.count} (${title})`,
-        isCuotaPayment: true
+        isCuotaPayment: true,
+        cuotaCount: selectedCuota.count,
+        cuotaAmount: selectedCuota.amount,
+        cuotaSchedule: installmentSchedule
       });
     } else {
       onDirectIzipayCheckout(packageData);
@@ -98,29 +131,37 @@ export default function PackageCard({
           {/* Interactive Mode Switcher if has cuotas */}
           {hasCuotas && (
             <div className="pt-2">
-              <div className="grid grid-cols-2 gap-1 p-1 bg-slate-950/70 rounded-xl border border-slate-700/60 text-[10px] font-black">
+              <div className={`grid gap-1 p-1 bg-slate-950/70 rounded-xl border border-slate-700/60 text-[10px] font-black ${
+                cuotaOptions.length > 1 ? 'grid-cols-3' : 'grid-cols-2'
+              }`}>
                 <button
                   type="button"
                   onClick={() => setPaymentMode('contado')}
-                  className={`py-1 rounded-lg transition-all ${
+                  className={`py-1 rounded-lg transition-all cursor-pointer ${
                     paymentMode === 'contado'
-                      ? 'bg-amber-400 text-slate-950 shadow-xs'
+                      ? 'bg-amber-400 text-slate-950 shadow-xs font-black'
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   CONTADO
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMode('cuotas')}
-                  className={`py-1 rounded-lg transition-all ${
-                    paymentMode === 'cuotas'
-                      ? 'bg-emerald-400 text-slate-950 shadow-xs'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  {selectedCuota.count} CUOTAS
-                </button>
+                {cuotaOptions.map((opt, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setPaymentMode('cuotas');
+                      setSelectedCuotaIndex(idx);
+                    }}
+                    className={`py-1 rounded-lg transition-all cursor-pointer ${
+                      paymentMode === 'cuotas' && selectedCuotaIndex === idx
+                        ? 'bg-emerald-400 text-slate-950 shadow-xs font-black'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {opt.count} CUOTAS
+                  </button>
+                ))}
               </div>
             </div>
           )}
@@ -136,9 +177,60 @@ export default function PackageCard({
           </div>
 
           {paymentMode === 'cuotas' && selectedCuota && (
-            <p className="text-[10px] text-emerald-300 font-semibold text-center">
-              Pagas S/ {selectedCuota.amount} hoy y la sig. cuota en 30 días
-            </p>
+            <div className="pt-2 border-t border-slate-700/60 mt-2 space-y-1.5 animate-fadeIn">
+              <p className="text-[10px] text-emerald-300 font-semibold text-center">
+                Pagas S/ {selectedCuota.amount} hoy y la sig. cuota en 1 mes exacto
+              </p>
+
+              {/* Encabezado del Cronograma */}
+              <div className="flex items-center justify-between text-[10px] font-bold text-slate-300 px-0.5 pt-0.5">
+                <span className="flex items-center gap-1 text-amber-300">
+                  <Calendar className="w-3 h-3 text-amber-400 shrink-0" />
+                  <span>Cronograma ({selectedCuota.count} cuotas):</span>
+                </span>
+                <span className="text-[9px] text-slate-400 font-medium">1 mes exacto</span>
+              </div>
+
+              {/* Grid Dinámico de Cuotas (2, 3 o 4) */}
+              <div className={`grid gap-1.5 ${
+                selectedCuota.count === 2
+                  ? 'grid-cols-2'
+                  : selectedCuota.count === 3
+                    ? 'grid-cols-3'
+                    : 'grid-cols-2 sm:grid-cols-4'
+              }`}>
+                {installmentSchedule.map((item) => (
+                  <div
+                    key={item.number}
+                    className={`p-1.5 rounded-xl border text-center transition-all ${
+                      item.isToday
+                        ? 'bg-emerald-500/20 border-emerald-400/80 text-emerald-100 ring-1 ring-emerald-400/40 shadow-xs'
+                        : 'bg-slate-900/90 border-slate-700/80 text-slate-300'
+                    }`}
+                  >
+                    <div className="text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1">
+                      <span>Cuota {item.number}</span>
+                      {item.isToday && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      )}
+                    </div>
+                    <div className="text-[11px] font-extrabold font-mono text-white leading-tight mt-0.5">
+                      S/ {item.amount}
+                    </div>
+                    <div className={`text-[9px] font-bold mt-0.5 leading-tight ${
+                      item.isToday ? 'text-emerald-300' : 'text-slate-400'
+                    }`}>
+                      {item.label}
+                    </div>
+                    <div className={`text-[8px] uppercase tracking-tight mt-0.5 font-medium ${
+                      item.isToday ? 'text-emerald-400 font-bold' : 'text-slate-500'
+                    }`}>
+                      {item.isToday ? 'Pagas Hoy' : 'Siguiente'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </div>

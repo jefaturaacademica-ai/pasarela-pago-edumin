@@ -287,7 +287,15 @@ export default function App() {
   // Trigger Direct Official Izipay Pop-in Checkout
   const handleDirectIzipayCheckout = (item) => {
     const amount = item ? (item.basePrice || item.price || 540) : 540;
-    const items = item ? [{ id: item.id, title: item.title, price: amount }] : cartItems;
+    const items = item ? [{ 
+      id: item.id, 
+      title: item.selectedCuotaText || item.title, 
+      price: amount,
+      isCuotaPayment: !!item.isCuotaPayment,
+      cuotaCount: item.cuotaCount,
+      cuotaAmount: item.cuotaAmount,
+      cuotaSchedule: item.cuotaSchedule
+    }] : cartItems;
     setIzipayCheckoutAmount(amount);
     setIzipayCheckoutItems(items);
     setIsIzipayCheckoutOpen(true);

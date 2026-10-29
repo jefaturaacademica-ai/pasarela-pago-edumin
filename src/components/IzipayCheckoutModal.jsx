@@ -1317,16 +1317,52 @@ export default function IzipayCheckoutModal({
                     </button>
                     {showCronograma && (
                       <div className="p-3 text-xs space-y-2.5 bg-amber-50/30 animate-fadeIn border-t border-slate-200">
-                        {/* OPCION 1: PAGO ÚNICO CONTADO */}
-                        <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl space-y-1">
-                          <div className="flex justify-between items-center text-emerald-950 font-bold text-xs">
-                            <span>✅ Pago Único al Contado (Hoy):</span>
-                            <span className="font-mono text-emerald-700">S/ {activeAmount}.00 PEN</span>
+                        {cartItems && cartItems[0]?.isCuotaPayment && cartItems[0]?.cuotaSchedule ? (
+                          <div className="space-y-2">
+                            <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
+                              <div className="flex justify-between items-center text-amber-950 font-bold text-xs">
+                                <span>📅 Plan de {cartItems[0].cuotaCount || cartItems[0].cuotaSchedule.length} Cuotas Mensuales:</span>
+                                <span className="font-mono text-amber-800">1 mes exacto</span>
+                              </div>
+                              <p className="text-[10px] text-amber-900 font-medium">
+                                Hoy cancelas la <strong>Cuota 1</strong> (S/ {activeAmount}.00) para activar tu matrícula e ingreso al aula virtual de inmediato. Las siguientes cuotas se coordinan con tu asesora.
+                              </p>
+                            </div>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 pt-1">
+                              {cartItems[0].cuotaSchedule.map((c) => (
+                                <div 
+                                  key={c.number} 
+                                  className={`p-2 rounded-lg border text-center ${
+                                    c.isToday 
+                                      ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold ring-1 ring-emerald-300' 
+                                      : 'bg-white border-slate-200 text-slate-700'
+                                  }`}
+                                >
+                                  <div className="text-[10px] font-black uppercase flex items-center justify-center gap-1">
+                                    <span>Cuota {c.number}</span>
+                                    {c.isToday && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+                                  </div>
+                                  <div className="text-xs font-mono font-bold text-slate-900 mt-0.5">S/ {c.amount}.00</div>
+                                  <div className={`text-[10px] mt-0.5 font-semibold ${c.isToday ? 'text-emerald-700' : 'text-slate-500'}`}>
+                                    {c.label}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                          <p className="text-[10px] text-emerald-800 font-medium">
-                            🎉 ¡Al realizar este pago cancelas el 100% del valor del programa! <strong>Saldo pendiente futuro: S/ 0.00 PEN.</strong>
-                          </p>
-                        </div>
+                        ) : (
+                          /* OPCION 1: PAGO ÚNICO CONTADO */
+                          <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl space-y-1">
+                            <div className="flex justify-between items-center text-emerald-950 font-bold text-xs">
+                              <span>✅ Pago Único al Contado (Hoy):</span>
+                              <span className="font-mono text-emerald-700">S/ {activeAmount}.00 PEN</span>
+                            </div>
+                            <p className="text-[10px] text-emerald-800 font-medium">
+                              🎉 ¡Al realizar este pago cancelas el 100% del valor del programa! <strong>Saldo pendiente futuro: S/ 0.00 PEN.</strong>
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
