@@ -14,7 +14,6 @@ import Footer from './components/Footer';
 import StickyMobileBar from './components/StickyMobileBar';
 import DiplomadosCatalogModal from './components/DiplomadosCatalogModal';
 import CursosCatalogModal from './components/CursosCatalogModal';
-import TrustBadges from './components/TrustBadges';
 
 import { validatePaymentIntegrity } from './utils/securityUtils';
 
@@ -472,8 +471,6 @@ export default function App() {
         onSelectCategory={(cat) => setActiveCategory(cat)}
       />
 
-      {/* Official Trust & Banking Security Badges */}
-      <TrustBadges />
 
       {/* Main Specialization Packages & Courses Grid */}
       <main className="flex-1 py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full space-y-16">
