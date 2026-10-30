@@ -69,7 +69,6 @@ const OFFICIAL_PACKAGES = [
     originalPrice: 5000,
     note: 'NOTA: ACCESO ILIMITADO POR 2 AÑOS.',
     cuotaOptions: [
-      { count: 3, amount: 530, total: 1590 },
       { count: 4, amount: 400, total: 1600 }
     ],
     items: [
